@@ -3,7 +3,7 @@ from statistics import median
 
 from src.game_state import GameState
 from src.player import Choices
-from src.mech import Mech, Sandpiper, Hauler
+import src.mech as mechs
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("HotMech")
@@ -61,6 +61,7 @@ class Statistician:
         * How often did each mech win?
         * How often did each pilot win?
         * How often did each upgrade win?
+        * What & of damage was overheating?
         """
 
         def get_rate(number_of_games):
@@ -71,8 +72,8 @@ class Statistician:
             return f"{percent}% ({number_of_games}/{len(self.games)})"
 
         # Who won?
-        mechs = [m.__name__ for m in Mech.all_types.values()]
-        for mech_name in mechs + ["Tie", "None"]:
+        mech_names = [m.__name__ for m in mechs.Mech.all_types.values()]
+        for mech_name in mech_names + ["Tie", "None"]:
             wins = len([
                 g for g in self.games
                 if mech_name in str(g.winner)
@@ -117,9 +118,14 @@ class Statistician:
 if __name__ == "__main__":
     s = Statistician()
 
-    s.run_simulations()
-    s.print_statistics()
-
     print("Example game:")
     logger.setLevel(logging.DEBUG)
-    s.run_simulations(1, Sandpiper, Hauler)
+    s.run_simulations(1, mechs.Sandpiper, mechs.Thermo)
+
+    # print("Example game vs skeleton:")
+    # logger.setLevel(logging.DEBUG)
+    # s.run_simulations(1, mechs.Sandpiper, mechs.Skeleton)
+
+    logger.setLevel(logging.WARNING)
+    s.run_simulations()
+    s.print_statistics()

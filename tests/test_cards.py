@@ -11,10 +11,16 @@ def assert_player(player, health=10, location=(0, 0)):
     assert loc == location
 
 def play_card(player, card_type, card_limit=None):
-    player.hand = []
+    card = card_type(GameState.get_last(), player)
+    player.hand.append(card)
     player.discard = []
-    player.deck = [card_type(GameState.get_last(), player)]
-    player.take_turn(card_limit)
+    player.deck = []
+    player.play_card(card)
+
+def assert_heat(player, heat=1, reset=True):
+    assert player.mech.heat == heat
+    if reset:
+        player.mech.heat = 1
 
 def get_players():
     # Create two blank mechs
@@ -101,15 +107,119 @@ def test_utility():
 
 def test_combat():
     w, b = get_players()
-    # TODO
-    """
-    CookCabin
-    MeltSensors
-    TorchEm
-    LooseMissile
-    MissileHail
-    PushOff
-    LaserSnapfire
-    BlindingBurst
-    TrackingShot
-    """
+
+    # Start at 10
+    assert w.mech.hp == 10
+    assert b.mech.hp == 10
+
+    # And out of range
+    b.location = (13, 0)
+    play_card(w, cards.LooseMissile)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 10
+    assert_heat(w, 2)
+
+    # But once we move in range, we can attack
+    b.location = (10, 0)
+    play_card(w, cards.LooseMissile)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 8
+    assert_heat(w, 2)
+
+    # Attack also discards
+    c1 = cards.StandardMove(GameState.get_last(), b)
+    c2 = cards.StandardMove(GameState.get_last(), b)
+    c3 = cards.StandardMove(GameState.get_last(), b)
+    b.hand = [c1, c2, c3]
+    assert len(b.hand) == 3
+    play_card(w, cards.MeltSensors)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 8
+    assert len(b.hand) == 1
+    assert_heat(w, 5)
+
+    b.hand = [c1, c2, c3]
+    b.location = (6, 0)
+    play_card(w, cards.CookCabin)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 3
+    assert len(b.hand) == 2
+    assert_heat(w, 4)
+
+    # Some cards are retired after use
+    assert len(b.retired) == 0
+    play_card(b, cards.MissileHail)
+    assert w.mech.hp == 5
+    assert b.mech.hp == 3
+    assert len(b.retired) == 1
+    assert_heat(b, 4)
+
+    # Don't die yet!
+    w.mech.hp = 10
+    b.mech.hp = 10
+
+    # Some attacks let you move
+    assert w.location == (0, 0)
+    play_card(w, cards.LaserSnapfire)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 7
+    assert w.location == (2, 0)
+    assert_heat(w, 3)
+
+    # Some force the enemy to rotate
+    assert b.rotation == 180
+    play_card(w, cards.BlindingBurst)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 2
+    assert b.rotation == 270
+    assert_heat(w, 4)
+
+    # can't play until we turn towards them
+    play_card(b, cards.LooseMissile)
+    assert w.mech.hp == 10
+    assert b.mech.hp == 2
+    assert_heat(b, 2)
+
+    # This lets us turn
+    assert b.rotation == 270
+    play_card(b, cards.TrackingShot)
+    assert b.rotation == 180
+    assert w.mech.hp == 7
+    assert b.mech.hp == 2
+    assert_heat(b, 3)
+
+    # Some heat them up
+    play_card(b, cards.TorchEm)
+    assert w.mech.hp == 3
+    assert b.mech.hp == 2
+    assert_heat(b, 5)
+    assert_heat(w, 3)
+
+    # Some push you back
+    b.location = (4, 0)
+    assert w.location == (2, 0)
+    play_card(b, cards.PushOff)
+    assert w.mech.hp == 1
+    assert b.mech.hp == 2
+    assert b.location == (10, 0)
+    assert_heat(b, 3)
+
+    # And the last shot kills ya
+    play_card(w, cards.TrackingShot)
+    assert w.mech.hp == 1
+    assert b.mech.hp == -1
+
+def test_cost():
+    # Check to see that all cards are balanced, according to
+    # how powerful their steps are
+    w, b = get_players()
+    gs = GameState.get_last()
+
+    for card_type in cards.Card.all_types.values():
+        card = card_type(gs, w)
+        # TODO can be a bit off
+        msg = f"{card.name} {card.cost()}c != {card.heat}h"
+        allowed_heat = range(card.heat-1, card.heat + 2)
+        assert card.cost() in allowed_heat, msg
+        if card.cost() != card.heat:
+            print(msg + " but within +/-1")

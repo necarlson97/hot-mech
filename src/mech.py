@@ -34,7 +34,7 @@ class Mech:
         """
         if self.heat > 6:
             self.heat = 6
-            melt_dmg = random.randint(0, 6)
+            melt_dmg = random.randint(1, 6)
             self.heat -= melt_dmg
             self.hp -= melt_dmg
             logger.info(f"{self.name} overheated for {melt_dmg}")
@@ -103,13 +103,23 @@ class Thermo(Mech):
 class Hauler(Mech):
     max_hp = 25
     hard_points = 2
-    # TODO
     card_types = [
         cards.StaggerForward,
         cards.StaggerForward,
-        cards.LooseMissile,
-        cards.LooseMissile,
-        cards.MissileHail,
+        cards.OverdriveServos,
+        cards.OverdriveServos,
+        cards.DriveBy,
+        cards.MechanicalFuse,
+        cards.MechanicalFuse,
+        cards.RememberTraining,
+        cards.RememberTraining,
+        cards.DoItRight,
+        cards.HeavyLead,
+        cards.HeavyLead,
+        cards.SupressingFire,
+        cards.SupressingFire,
+        cards.SweepingBarrage,
+        cards.SweepingBarrage,
     ]
 
 class Skeleton(Mech):

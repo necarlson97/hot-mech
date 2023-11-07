@@ -49,7 +49,7 @@ class GameState:
                 return
 
         if self.turns >= 100:
-            logging.warning(f"Long game: {self.turns}")
+            logging.warning(f"Long game: {self}")
 
     def take_turn(self):
         self.turns += 1
@@ -75,3 +75,10 @@ class GameState:
         if player == self.white:
             enemy = self.black
         return enemy
+
+    def __str__(self):
+        return (
+            f"({self.white} vs {self.black} turn {self.turns}"
+        )
+    def __repr__(self):
+        return self.__str__()

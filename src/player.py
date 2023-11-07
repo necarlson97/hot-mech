@@ -1,10 +1,12 @@
 import math
 import random
+from itertools import tee, filterfalse
+
+from src.mech import Mech, Skeleton
+from src.character import Character
+
 import logging
 logger = logging.getLogger("HotMech")
-
-from src.mech import Mech
-from src.character import Character
 
 class Player:
     """
@@ -36,6 +38,7 @@ class Player:
         self.largest_hand = 0
         self.played_cards = 0
         self.empty_hands = 0
+        self.turn_cards = 0
 
     def draw_card(self):
         # If we are out of cards, shuffle back in discard
@@ -69,18 +72,9 @@ class Player:
         while self.my_turn and self.turn_cards < 100:
             card = self.choose_card()
             if card is None:
-                self.empty_hands += 1
                 break
 
-            logger.info(f"{self} playing {card.name}")
-            card.play()
-            logger.info(f"hand {self.hand}")
-
-            self.get_enemy().mech.check_heat()
-            self.mech.check_heat()
-
-            self.turn_cards += 1
-            self.played_cards += 1
+            self.play_card(card)
 
             # Mostly for testing
             if card_limit and self.turn_cards >= card_limit:
@@ -91,15 +85,59 @@ class Player:
             logger.warning(f"Long turn: {self.turn_cards}")
             quit()
 
+    def play_card(self, card):
+        logger.info(f"{self} playing {card.name}")
+
+        self.hand.remove(card)
+        self.discard.append(card)
+        card.play()
+
+        self.get_enemy().mech.check_heat()
+        self.mech.check_heat()
+
+        self.turn_cards += 1
+        self.played_cards += 1
+
     def end_turn(self):
         self.my_turn = False
 
+    def sorted_hand(self, reverse=False):
+        return self.sorted_cards(self.hand, reverse)
+
+    def sorted_cards(self, cards, reverse=False):
+        """
+        Sort the cards by:
+        1. Can we play the card without overheating? a.k.a card.should()
+        2. Will the card have any effect? a.k.a card.can
+        3. As a tiebreaker, which card has the lower 'card.heat' cost
+        """
+
+        s_hand = sorted(cards, key=lambda card:
+            (not card.should(), not card.can(), card.heat)
+        )
+        if reverse:
+            s_hand.reverse()
+        return s_hand
+
     def choose_card(self):
-        if (len(self.hand) < 1):
+        """
+        Choose a random card to play, but ideally:
+        1. A card we can play without overheating
+        2. A card we can play, but will overheat
+        3. A card we can somewhat play (some but not all steps will activate)
+        4. A card no steps will activate on
+        """
+        if len(self.hand) < 1:
+            self.empty_hands += 1
             return None
-        card = random.choice(self.hand)
-        self.hand.remove(card)
-        self.discard.append(card)
+
+        card = self.sorted_hand()[0]
+
+        # TODO not optimized
+        # Lets not overheat every turn
+        if not card.should() and random.randint(0, 1) == 0:
+            return None
+
         return card
 
     def angle_to_enemy(self):
@@ -141,10 +179,12 @@ class Player:
         dy = enemy.location[1] - self.location[1]
         return math.sqrt(dx**2 + dy**2)
 
-    def in_range(self, max_range=6, min_range=0):
+    def in_range(self, range_a=6, range_b=0):
         """
         Return true if our location is within a specified range of the enemy
         """
+        min_range = min(range_a, range_b)
+        max_range = max(range_a, range_b)
         return min_range <= self.distance_to_enemy() <= max_range
 
     def move_toward(self, range_max=6, range_min=0, ignore_terrrain=False):
@@ -153,6 +193,12 @@ class Player:
         (or 1 in front of them, if we are able)
         If we are facing away from the enemy, move the minimum
         """
+
+        logger.info(
+            f"Facing toward: {self.facing_toward_enemy()} "
+            f"({round(self.rotation)} vs {round(self.angle_to_enemy())})"
+        )
+
         if self.facing_toward_enemy():
             distance_to_enemy = self.distance_to_enemy()
 
@@ -187,7 +233,8 @@ class Player:
         If we are facing away from the enemy, move the minimum
         """
         # Calculate the new position using the angle and move_distance
-        angle = angle or self.rotation
+        if angle is None:
+            angle = self.rotation
         angle_radians = math.radians(angle)
         new_x = self.location[0] + move_distance * math.cos(angle_radians)
         new_y = self.location[1] + move_distance * math.sin(angle_radians)
@@ -197,7 +244,7 @@ class Player:
         # For now, to handle crashing into terrain,
         # just make it an occasional random thing
         if random.randint(0, 10) == 0:
-            self.mech.hp -= random.randint(0, 6)
+            self.mech.hp -= random.randint(1, 6)
 
     def rotate_towards(self, rot_max=90, rot_min=0):
         """
@@ -214,9 +261,6 @@ class Player:
 
         # Clamp the rotation between rot_min and rot_max
         rotation_amount = max(min(rot_max, angle_difference), -rot_max)
-        print(f"{self} starting rot: {self.rotation}")
-        print(f"angle to: {self.angle_to_enemy()} = {angle_difference}")
-        print(f"rotation amount: {angle_difference} = {rotation_amount}")
         self.rotate(rotation_amount)
 
     def rotate(self, rot):
@@ -229,8 +273,12 @@ class Player:
         """
         Discard a card
         """
-        # TODO naming is a little strange
-        self.choose_card()
+        if len(self.hand) < 1:
+            return None
+        card = self.sorted_hand(reverse=True)[0]
+        self.hand.remove(card)
+        self.discard.append(card)
+        return card
 
     def __str__(self):
         return (
@@ -250,6 +298,8 @@ class Choices:
         all_characters = list(Character.all_types.values())
         self.character_type = ct or random.choice(all_characters)
         all_mechs = list(Mech.all_types.values())
+        # Don't choose skeleton
+        all_mechs.remove(Skeleton)
         self.mech_type = mt or random.choice(all_mechs)
         # TODO upgrades
 
