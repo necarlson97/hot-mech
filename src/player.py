@@ -66,12 +66,21 @@ class Player:
         for i in range(self.starting_hand - len(self.hand)):
             self.draw_card()
 
+        # TODO is heat subtracted, reset, or untouched at the start of a turn?
+        self.mech.heat -= 1
+        # self.mech.heat = 1
+
         self.my_turn = True
 
         self.turn_cards = 0
         while self.my_turn and self.turn_cards < 100:
             card = self.choose_card()
+
+            # If we can't play anything
             if card is None:
+                # Maybe discard some cards
+                if (self.turn_cards < 3):
+                    self.throw_away(3 - self.turn_cards)
                 break
 
             self.play_card(card)
@@ -86,7 +95,8 @@ class Player:
             quit()
 
     def play_card(self, card):
-        logger.info(f"{self} playing {card.name}")
+        logger.info(
+            f"{self} playing {card.name} ({card.should()}/{card.can()})")
 
         self.hand.remove(card)
         self.discard.append(card)
@@ -133,9 +143,15 @@ class Player:
 
         card = self.sorted_hand()[0]
 
-        # TODO not optimized
-        # Lets not overheat every turn
-        if not card.should() and random.randint(0, 1) == 0:
+        # If we are going to overheat, make it a 50/50
+        # TOOD could see if it was a 'worthwhile' card by some metric...
+        # (one in 'x' chance to play overheating card)
+        one_in = 5
+        if not card.should() and random.randint(0, one_in) < one_in:
+            return None
+
+        # Don't overheat if it might kill you
+        if not card.should() and self.mech.hp <=5:
             return None
 
         return card
@@ -193,12 +209,6 @@ class Player:
         (or 1 in front of them, if we are able)
         If we are facing away from the enemy, move the minimum
         """
-
-        logger.info(
-            f"Facing toward: {self.facing_toward_enemy()} "
-            f"({round(self.rotation)} vs {round(self.angle_to_enemy())})"
-        )
-
         if self.facing_toward_enemy():
             distance_to_enemy = self.distance_to_enemy()
 
@@ -269,16 +279,16 @@ class Player:
     def get_enemy(self):
         return self.game_state.enemy_of(self)
 
-    def throw_away(self):
+    def throw_away(self, number_of_cards=1):
         """
         Discard a card
         """
-        if len(self.hand) < 1:
-            return None
-        card = self.sorted_hand(reverse=True)[0]
-        self.hand.remove(card)
-        self.discard.append(card)
-        return card
+        for i in range(number_of_cards):
+            if len(self.hand) < 1:
+                return
+            card = self.sorted_hand(reverse=True)[0]
+            self.hand.remove(card)
+            self.discard.append(card)
 
     def __str__(self):
         return (

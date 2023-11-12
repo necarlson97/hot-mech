@@ -92,7 +92,7 @@ def test_utility():
     assert b.mech.heat == 1
     play_card(b, cards.CombatWit, 1)
     assert len(b.hand) == 1
-    assert b.mech.heat == 3
+    assert b.mech.heat == 2
 
     # Here black plays another card, lowering heat
     play_card(b, cards.CoolOff)
@@ -136,7 +136,7 @@ def test_combat():
     assert w.mech.hp == 10
     assert b.mech.hp == 8
     assert len(b.hand) == 1
-    assert_heat(w, 5)
+    assert_heat(w, 4)
 
     b.hand = [c1, c2, c3]
     b.location = (6, 0)
@@ -149,7 +149,7 @@ def test_combat():
     # Some cards are retired after use
     assert len(b.retired) == 0
     play_card(b, cards.MissileHail)
-    assert w.mech.hp == 5
+    assert w.mech.hp == 6
     assert b.mech.hp == 3
     assert len(b.retired) == 1
     assert_heat(b, 4)
@@ -184,30 +184,25 @@ def test_combat():
     assert b.rotation == 270
     play_card(b, cards.TrackingShot)
     assert b.rotation == 180
-    assert w.mech.hp == 7
+    assert w.mech.hp == 8
     assert b.mech.hp == 2
     assert_heat(b, 3)
 
     # Some heat them up
     play_card(b, cards.TorchEm)
-    assert w.mech.hp == 3
+    assert w.mech.hp == 6
     assert b.mech.hp == 2
-    assert_heat(b, 5)
+    assert_heat(b, 4)
     assert_heat(w, 3)
 
     # Some push you back
     b.location = (4, 0)
     assert w.location == (2, 0)
     play_card(b, cards.PushOff)
-    assert w.mech.hp == 1
+    assert w.mech.hp == 0
     assert b.mech.hp == 2
     assert b.location == (10, 0)
-    assert_heat(b, 3)
-
-    # And the last shot kills ya
-    play_card(w, cards.TrackingShot)
-    assert w.mech.hp == 1
-    assert b.mech.hp == -1
+    assert_heat(b, 2)
 
 def test_cost():
     # Check to see that all cards are balanced, according to

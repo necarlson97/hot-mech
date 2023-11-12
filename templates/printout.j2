@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="heat-color.js"></script>
+</head>
+<body>
+{% for mech in mechs %}
+    <div class="mech-section">
+        <h2>{{ mech.name }}</h2>
+        <div class="cards-container">
+            {% for card_type in mech.card_types %}
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-name">{{ card_type.human_name() }}</span>
+                        <span class="card-heat">{{ card_type.heat }}</span>
+                    </div>
+                    <img src="images/{{ card_type.name }}.png" class="card-image">
+                    <div class="card-body">
+                        {% for step in card_type.steps %}
+                            <p>{{ '‣' + step.explainer() }}</p>
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer">{{ card_type.flavor_text }}</div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="page-break"></div>
+    </div>
+{% endfor %}
+</body>
+</html>

@@ -7,7 +7,9 @@ class Character:
     card_types = []
 
     def __init__(self, game_state, player):
-        self.name = self.__class__.__name__
+        self.name = "".join(
+            filter(lambda c: c.isupper(), self.__class__.__name__)
+        )
         self.cards = [card() for card in self.card_types]
 
     # A dict that holds all defined subclasses by:

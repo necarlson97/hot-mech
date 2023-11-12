@@ -81,11 +81,22 @@ class Statistician:
             self.stats[f"{mech_name} Wins"] = get_rate(wins)
 
         # How long did games take?
+        t = median(g.turns for g in self.games)
         self.stats["Median Game Length"] = (
-            f"{median(g.turns for g in self.games)} turns"
+            f"{t} turns ({t // 2}) rounds"
         )
+        t = max(g.turns for g in self.games)
         self.stats["Max Game Length"] = (
-            f"{max(g.turns for g in self.games)} turns"
+            f"{t} turns ({t // 2}) rounds"
+        )
+
+        fb = median(g.first_blood_turn for g in self.games)
+        self.stats["Median 1st blood"] = (
+            f"{fb} turns ({fb // 2}) rounds"
+        )
+        fb = max(g.first_blood_turn for g in self.games)
+        self.stats["Max 1st blood"] = (
+            f"{fb} turns ({fb // 2}) rounds"
         )
 
         turn_counts = [
@@ -98,6 +109,13 @@ class Statistician:
         )
         self.stats["Max Turn Length"] = (
             f"{max(turn_counts)} cards per turn"
+        )
+
+        self.stats["Median Melt Damage"] = (
+            f"{median(g.total_melt_dmg for g in self.games)}"
+        )
+        self.stats["Median Weapon Damage"] = (
+            f"{median(g.total_weapon_dmg for g in self.games)}"
         )
 
     def print_statistics(self):

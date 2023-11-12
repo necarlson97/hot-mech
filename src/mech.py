@@ -28,6 +28,9 @@ class Mech:
             for card in self.card_types
         ]
 
+        # For stats
+        self.total_melt_dmg = 0
+
     def check_heat(self):
         """
         Check if mech 'overheats'
@@ -38,6 +41,7 @@ class Mech:
             self.heat -= melt_dmg
             self.hp -= melt_dmg
             logger.info(f"{self.name} overheated for {melt_dmg}")
+            self.total_melt_dmg += melt_dmg
             self.player.end_turn()
         if self.heat < 1:
             self.heat = 1
@@ -55,9 +59,8 @@ class Mech:
 All mechs defined below
 """
 class Sandpiper(Mech):
-    max_hp = 15
+    max_hp = 5
     hard_points = 3
-    # TODO
     card_types = [
         cards.StandardMove,
         cards.StandardMove,
@@ -78,9 +81,8 @@ class Sandpiper(Mech):
     ]
 
 class Thermo(Mech):
-    max_hp = 20
+    max_hp = 10
     hard_points = 2
-    # TODO
     card_types = [
         cards.StandardMove,
         cards.StandardMove,
@@ -101,7 +103,7 @@ class Thermo(Mech):
     ]
 
 class Hauler(Mech):
-    max_hp = 25
+    max_hp = 15
     hard_points = 2
     card_types = [
         cards.StaggerForward,
