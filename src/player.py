@@ -3,7 +3,7 @@ import random
 from itertools import tee, filterfalse
 
 from src.mech import Mech, Skeleton
-from src.character import Character
+from src.pilot import Pilot
 
 import logging
 logger = logging.getLogger("HotMech")
@@ -11,19 +11,19 @@ logger = logging.getLogger("HotMech")
 class Player:
     """
     Represents the individual human player for each game,
-    that has chosen a character, mech, etc
+    that has chosen a pilot, mech, etc
     """
 
     starting_hand = 5
 
     def __init__(self, game_state,
-                 character_type, mech_type, upgrade_types=[]):
+                 pilot_type, mech_type, upgrade_types=[]):
         self.game_state = game_state
-        self.character = character_type(game_state, self)
+        self.pilot = pilot_type(game_state, self)
         self.mech = mech_type(game_state, self)
         self.upgrades = [u(game_state, self) for u in upgrade_types]
         self.deck = (
-            self.character.cards + self.mech.cards
+            self.pilot.cards + self.mech.cards
             + [u.cards for u in self.upgrades]
         )
 
@@ -74,13 +74,16 @@ class Player:
 
         self.turn_cards = 0
         while self.my_turn and self.turn_cards < 100:
+            # Maybe discard some cards
+            # TODO are we allowed? Or are we forced to play,
+            # and take heat?
+            if (self.turn_cards < 3):
+                self.throw_away(3 - self.turn_cards)
+
             card = self.choose_card()
 
             # If we can't play anything
             if card is None:
-                # Maybe discard some cards
-                if (self.turn_cards < 3):
-                    self.throw_away(3 - self.turn_cards)
                 break
 
             self.play_card(card)
@@ -122,8 +125,9 @@ class Player:
         3. As a tiebreaker, which card has the lower 'card.heat' cost
         """
 
-        s_hand = sorted(cards, key=lambda card:
-            (not card.should(), not card.can(), card.heat)
+        s_hand = sorted(
+            cards,
+            key=lambda card: (not card.should(), not card.can(), card.heat)
         )
         if reverse:
             s_hand.reverse()
@@ -151,7 +155,7 @@ class Player:
             return None
 
         # Don't overheat if it might kill you
-        if not card.should() and self.mech.hp <=5:
+        if not card.should() and self.mech.hp <= 5:
             return None
 
         return card
@@ -292,7 +296,7 @@ class Player:
 
     def __str__(self):
         return (
-            f"({self.character.name}, {self.mech.name} "
+            f"({self.pilot.name}, {self.mech.name} "
             f"{self.mech.heat}h {self.mech.hp}hp)"
         )
     def __repr__(self):
@@ -301,12 +305,12 @@ class Player:
 class Choices:
     """
     Simple dataclass to keep track of a player's choices:
-    their character type, mech type, etc
+    their pilot type, mech type, etc
     """
 
     def __init__(self, ct=None, mt=None):
-        all_characters = list(Character.all_types.values())
-        self.character_type = ct or random.choice(all_characters)
+        all_pilots = list(Pilot.all_types.values())
+        self.pilot_type = ct or random.choice(all_pilots)
         all_mechs = list(Mech.all_types.values())
         # Don't choose skeleton
         all_mechs.remove(Skeleton)
@@ -314,4 +318,4 @@ class Choices:
         # TODO upgrades
 
     def create_player(self, game_state):
-        return Player(game_state, self.character_type, self.mech_type)
+        return Player(game_state, self.pilot_type, self.mech_type)

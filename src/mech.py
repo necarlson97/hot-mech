@@ -1,10 +1,13 @@
 import random
+
+import src.card as cards
+from src.utils import NamedClass
+
 import logging
 logger = logging.getLogger("HotMech")
 
-import src.card as cards
 
-class Mech:
+class Mech(NamedClass):
     """
     Abstract class, that each specific type of mech will sub-class
     Then each instance of a subclass is the individual game's mech,
@@ -20,7 +23,6 @@ class Mech:
     heat = 1
 
     def __init__(self, game_state, player):
-        self.name = self.__class__.__name__
         self.player = player
         self.hp = self.max_hp
         self.cards = [
@@ -46,7 +48,7 @@ class Mech:
         if self.heat < 1:
             self.heat = 1
 
-    # A dict that holds all defined subclasses by:
+    # A dict that holds all defined cards by:
     # string of class name -> type
     all_types = {}
     @classmethod
