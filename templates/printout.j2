@@ -3,30 +3,52 @@
 <head>
     <link rel="stylesheet" type="text/css" href="styles.css">
     <script src="heat-color.js"></script>
+    <script src="dark-mode-toggle.js"></script>
 </head>
 <body>
-{% for mech in mechs %}
-    <div class="mech-section">
-        <h2>{{ mech.name }}</h2>
-        <div class="cards-container">
-            {% for card_type in mech.card_types %}
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-name">{{ card_type.human_name() }}</span>
-                        <span class="card-heat">{{ card_type.heat }}</span>
+    <button id="dark-toggle">🌞</button>
+
+    {% for mech in mechs %}
+        <div class="mech-section">
+            <h2>{{ mech.name }}</h2>
+            <div class="cards-container">
+                {% for card_type in mech.card_types %}
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-name">{{ card_type.human_name() }}</span>
+                            <span class="card-heat">{{ card_type.heat }}</span>
+                        </div>
+                        <img src="images/{{ card_type.name }}.png" class="card-image">
+                        <div class="card-body">
+                            {% for step in card_type.steps %}
+                                <p>{{ '‣' + step.explainer() }}</p>
+                            {% endfor %}
+                        </div>
+                        <div class="card-footer">{{ card_type.flavor_text }}</div>
                     </div>
-                    <img src="images/{{ card_type.name }}.png" class="card-image">
-                    <div class="card-body">
-                        {% for step in card_type.steps %}
-                            <p>{{ '‣' + step.explainer() }}</p>
-                        {% endfor %}
-                    </div>
-                    <div class="card-footer">{{ card_type.flavor_text }}</div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
+            <div class="page-break"></div>
         </div>
-        <div class="page-break"></div>
+    {% endfor %}
+
+    <h2> All Cards </h2>
+    <div class="cards-container">
+        {% for card_type in Card.all_types.values() %}
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-name">{{ card_type.human_name() }}</span>
+                    <span class="card-heat">{{ card_type.heat }}</span>
+                </div>
+                <img src="images/{{ card_type.name }}.png" class="card-image">
+                <div class="card-body">
+                    {% for step in card_type.steps %}
+                        <p>{{ '‣' + step.explainer() }}</p>
+                    {% endfor %}
+                </div>
+                <div class="card-footer">{{ card_type.flavor_text }}</div>
+            </div>
+        {% endfor %}
     </div>
-{% endfor %}
 </body>
 </html>

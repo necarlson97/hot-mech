@@ -1,9 +1,17 @@
+from src.utils import camel_to_hypens, snake_to_title
+
 import logging
 logger = logging.getLogger("HotMech")
 
-from src.utils import camel_to_hypens, snake_to_title
+class NamedClassMeta(type):
+    # Just a little helper metaclass to keep track of each caard types name
+    def __new__(cls, name, bases, dct):
+        new_class = super().__new__(cls, name, bases, dct)
+        new_class.name = camel_to_hypens(name)
+        return new_class
 
-class Card:
+
+class Card(metaclass=NamedClassMeta):
     """
     Abstract class, that each specific type of card will sub-class
     Then each instance of a subclass is the individual card,
@@ -17,11 +25,6 @@ class Card:
 
     # How much heat does this contribute to the mech
     heat = 1
-
-    def __new__(cls, *args, **kwargs):
-        cls.name = camel_to_hypens(cls.__name__)
-        instance = super().__new__(cls)
-        return instance
 
     def __init__(self, game_state, player):
         self.game_state = game_state
@@ -78,7 +81,7 @@ class Card:
     def __repr__(self):
         return self.__str__()
 
-class Step:
+class Step(metaclass=NamedClassMeta):
     """
     Abstract class, that each specific type of step will sub-class.
     Then each instance of a subclass is a step on a card,
@@ -115,7 +118,7 @@ class Step:
             k: v for k, v in self.__dict__.items()
             if not k.startswith('_')
         }
-        return f"{self.__class__.__name__} {public_attrs}"
+        return f"{self.name} {public_attrs}"
     def __repr__(self):
         return self.__str__()
 

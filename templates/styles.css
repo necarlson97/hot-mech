@@ -4,11 +4,32 @@
     --candle: #FECDA6;
     --cool: #b4efff;
     --subtle: #A9A9A9;
+    --bg: #505050;
+}
+
+.light-mode {
+  --bg: white;
+}
+
+#dark-toggle {
+    border-radius: 1em;
+    display: inline;
+}
+
+@media print {
+    :root {
+        --bg: white;
+    }
+
+    #dark-toggle {
+        display: none;
+    }
 }
 
 body {
     font-family: Arial, sans-serif;
     padding: 0em;
+    background-color: var(--bg);
 }
 h1 {
     padding: 0em;
@@ -30,7 +51,7 @@ h1 {
     border: 2px solid var(--subtle);
     border-radius: .5em;
     overflow: hidden;
-    background-color: white;
+    background-color: var(--bg);
     display: flex;
     flex-direction: column;
     page-break-inside: avoid;
@@ -45,7 +66,7 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: stretch; /* Ensures that children stretch to fill the height */
-    background-color: white;
+    background-color: var(--bg);
 }
 
 .card-name {

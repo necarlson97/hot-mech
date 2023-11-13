@@ -39,12 +39,12 @@ function interpolateColor(color1, color2, factor) {
     return result;
 }
 
-window.onload = function(){
+addEventListener("load",function(event) {
     console.log("Coloring cards");
     document.querySelectorAll('.card-heat').forEach(element => {
         const heat = parseInt(element.textContent.trim());
         element.style.backgroundColor = getHeatColor(heat);
     });
-}
+});
 
 console.log("Heat color");
