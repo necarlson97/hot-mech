@@ -2,7 +2,10 @@ import logging
 from statistics import median
 
 from src.game_state import GameState
-from src.player import Choices
+from src.player import Player, Choices
+from src.mech import Mech
+from src.pilot import Pilot
+from src.upgrade import Upgrade
 import src.mech as mechs
 
 logging.basicConfig(level=logging.WARNING)
@@ -24,8 +27,6 @@ class Statistician:
     stats = {}
 
     def run_simulations(self, number=10000, w_mech=None, b_mech=None):
-        print("Running simulations.")
-
         for i in range(number):
             # For now, let's randomly select entities for simulation
             # TODO upgrades
@@ -64,51 +65,63 @@ class Statistician:
         * What & of damage was overheating?
         """
 
-        def get_rate(number_of_games):
+        def get_rate(games):
             # If something happens x number of games, what percent of
             # games was that?
+            number_of_games = len(list(games))
             percent = (number_of_games / len(self.games)) * 100
             percent = round(percent)
-            return f"{percent}% ({number_of_games}/{len(self.games)})"
+            return f"{percent}%"  # ({number_of_games}/{len(self.games)})"
 
         # Who won?
-        mech_names = [m.__name__ for m in mechs.Mech.all_types.values()]
-        for mech_name in mech_names + ["Tie", "None"]:
-            wins = len([
+        mech_names = [m.name for m in Mech.all_types.values()]
+        for name in mech_names + ["Tie", "None"]:
+            self.stats[f"{name} Wins"] = get_rate(
                 g for g in self.games
-                if mech_name in str(g.winner)
-            ])
-            self.stats[f"{mech_name} Wins"] = get_rate(wins)
+                if name in str(g.winner)
+            )
+
+        pilot_names = [p.name for p in Pilot.all_types.values()]
+        for name in pilot_names:
+            self.stats[f"{name} Wins"] = get_rate(
+                g for g in self.games
+                if name in str(g.winner)
+            )
+
+        for upgrade in Upgrade.all_types.values():
+            self.stats[f"{upgrade.name} Wins"] = get_rate(
+                g for g in self.games
+                if isinstance(g.winner, Player)
+                and upgrade in g.winner.upgrades
+            )
 
         # How long did games take?
-        t = median(g.turns for g in self.games)
-        self.stats["Median Game Length"] = (
-            f"{t} turns ({t // 2}) rounds"
-        )
-        t = max(g.turns for g in self.games)
-        self.stats["Max Game Length"] = (
-            f"{t} turns ({t // 2}) rounds"
-        )
+        def turn_info(t_list):
+            # Helper str for median/min/max # of turns
+            t_list = list(t_list)
+            return (
+                f"Median: {median(t_list)}t ({median(t_list) // 2})r"
+                + f" [{min(t_list)}-{max(t_list)}]"
+            )
 
-        fb = median(g.first_blood_turn for g in self.games)
-        self.stats["Median 1st blood"] = (
-            f"{fb} turns ({fb // 2}) rounds"
+        self.stats["Game Length"] = turn_info(
+            g.turns for g in self.games)
+        self.stats["1st blood"] = turn_info(
+            g.first_blood_turn for g in self.games
+            if g.first_blood_turn
         )
-        fb = max(g.first_blood_turn for g in self.games)
-        self.stats["Max 1st blood"] = (
-            f"{fb} turns ({fb // 2}) rounds"
-        )
+        self.stats[f"No weapons"] = get_rate(
+            g for g in self.games if g.first_blood_turn is None)
 
-        turn_counts = [
+        self.stats["Combat Length"] = turn_info(
+            (g.turns - g.first_blood_turn)
+            if g.first_blood_turn else 0
+            for g in self.games)
+
+        self.stats["Cards per turn"] = turn_info(
             turn_count
             for g in self.games
             for turn_count in g.turn_lengths
-        ]
-        self.stats["Median Turn Length"] = (
-            f"{median(turn_counts)} cards per turn"
-        )
-        self.stats["Max Turn Length"] = (
-            f"{max(turn_counts)} cards per turn"
         )
 
         self.stats["Median Melt Damage"] = (
@@ -119,6 +132,7 @@ class Statistician:
         )
 
     def print_statistics(self):
+        print(f"\n\n")
         print(f"Played {len(self.games)} games:")
         for game in self.games:
             msg = (
@@ -138,12 +152,13 @@ if __name__ == "__main__":
 
     print("Example game:")
     logger.setLevel(logging.DEBUG)
-    s.run_simulations(1, mechs.Sandpiper, mechs.Thermo)
+    s.run_simulations(1)
 
     # print("Example game vs skeleton:")
     # logger.setLevel(logging.DEBUG)
     # s.run_simulations(1, mechs.Sandpiper, mechs.Skeleton)
 
     logger.setLevel(logging.WARNING)
-    s.run_simulations()
-    s.print_statistics()
+    for i in range(10):
+        s.run_simulations(1000)
+        s.print_statistics()

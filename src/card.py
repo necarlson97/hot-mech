@@ -1,7 +1,5 @@
 from src.utils import NamedClass
-# Ugly shorthand - but it is used so frequently here,
-# I will allow it for now
-import src.card_steps as s
+from src.card_steps import *
 
 import logging
 logger = logging.getLogger("HotMech")
@@ -41,9 +39,21 @@ class Card(NamedClass):
 
     def can(self):
         """
-        Can this step take place at all, e.g.: is it in range
+        Can any steps take place at all, e.g.: is it in range
+        """
+        return any(s.can(self) for s in self.steps)
+
+    def all_can(self):
+        """
+        Can all steps take place at all, e.g.: is it in range
         """
         return all(s.can(self) for s in self.steps)
+
+    def how_many_can(self):
+        """
+        How many steps will activate
+        """
+        return len([s for s in self.steps if s.can(self)])
 
     def cost(self):
         """
@@ -64,12 +74,15 @@ class Card(NamedClass):
         # Register each subclass in the all_cards dictionary
         cls.all_types[cls.__name__] = cls
 
+    def __str__(self):
+        return f"{self.name} {self.steps}"
+
 """
 Below, all card types are defined:
 """
 class StandardMove(Card):
     heat = 1
-    steps = [s.Rotate(), s.MoveForward(0, 6)]
+    steps = [Rotate(), MoveForward(0, 6)]
     flavor_text = (
         '"Step by step, gear by gear, we march through metal and fear."'
         '\n— Seawell Militia Drill Song'
@@ -77,7 +90,7 @@ class StandardMove(Card):
 
 class StandingSwivel(Card):
     heat = 1
-    steps = [s.Rotate(0, 180)]
+    steps = [Rotate(0, 180)]
     flavor_text = (
         '"In the dance of death, always pirouette!"'
         '\n— Ballera, Mecha Duelist'
@@ -85,7 +98,7 @@ class StandingSwivel(Card):
 
 class StepUp(Card):
     heat = 2
-    steps = [s.Rotate(0, 90), s.MoveForward(0, 6, ignore_terrrain=True)]
+    steps = [Rotate(0, 90), MoveForward(0, 6, ignore_terrrain=True)]
     flavor_text = (
         '"When the words crumbles beneath yoU: step up, step up"'
         '\n— Excerpt from Skaldic death poem'
@@ -93,7 +106,7 @@ class StepUp(Card):
 
 class CombatWit(Card):
     heat = 1
-    steps = [s.Draw()]
+    steps = [Draw()]
     flavor_text = (
         '"Only thing sharper than vibroblades - is me!"'
         '\n— Dillhung the Copper Thief'
@@ -101,7 +114,7 @@ class CombatWit(Card):
 
 class StepBack(Card):
     heat = -2
-    steps = [s.MoveAway(2, 6)]
+    steps = [MoveAway(2, 6)]
     flavor_text = (
         '"The shadows are always there to welcome the wary."'
         '\n— V1ncent, Guerilla Droid'
@@ -109,7 +122,7 @@ class StepBack(Card):
 
 class CoolOff(Card):
     heat = -4
-    steps = [s.EndTurn()]
+    steps = [EndTurn()]
     flavor_text = (
         '"To forge the strongest iron, spare the constant hammering '
         '- let it rest."'
@@ -118,7 +131,7 @@ class CoolOff(Card):
 
 class CookCabin(Card):
     heat = 3
-    steps = [s.Attack(5, 6), s.EnemyDiscard(1)]
+    steps = [Attack(5, 6), EnemyDiscard(1)]
     flavor_text = (
         '"May our hope burn brighter than our cockpit fires!"'
         '\n— Reckles, Emberkin'
@@ -126,7 +139,7 @@ class CookCabin(Card):
 
 class MeltSensors(Card):
     heat = 3
-    steps = [s.EnemyDiscard(2)]
+    steps = [EnemyDiscard(2)]
     flavor_text = (
         '"Odysseus didn\'t need to outmatch the cyclopse - only its eye."'
         '\n— Phent, Oldland Saboteur'
@@ -134,7 +147,7 @@ class MeltSensors(Card):
 
 class TorchEm(Card):
     heat = 3
-    steps = [s.Attack(2, 12), s.HeatEnemy(2)]
+    steps = [Attack(2, 12), HeatEnemy(2)]
     flavor_text = (
         '"Light them up. Let them beg for darkness."'
         '\n— Pyre, Scabland Lantern King'
@@ -142,7 +155,7 @@ class TorchEm(Card):
 
 class LooseMissile(Card):
     heat = 1
-    steps = [s.Attack(2, 12)]
+    steps = [Attack(2, 12)]
     flavor_text = (
         '""A stray shot finds the most unexpected targets."'
         '\n— Lucy of the Steel Archers'
@@ -150,7 +163,7 @@ class LooseMissile(Card):
 
 class MissileHail(Card):
     heat = 3
-    steps = [s.Attack(4, 18), s.Retire()]
+    steps = [Attack(4, 18), Retire()]
     flavor_text = (
         '"They may perish, but they will never forget the storm."'
         '\n— Sgt. Redborn, Artillery Angles'
@@ -158,7 +171,7 @@ class MissileHail(Card):
 
 class ShakeItOff(Card):
     heat = -1
-    steps = [s.Rotate(90, 180)]
+    steps = [Rotate(90, 180)]
     flavor_text = (
         '"Make your own cool wind!"'
         '\n— Ballera, Mecha Duelist'
@@ -166,7 +179,7 @@ class ShakeItOff(Card):
 
 class JumpPack(Card):
     heat = 3
-    steps = [s.Rotate(0, 90), s.MoveForward(6, 12, ignore_terrrain=True)]
+    steps = [Rotate(0, 90), MoveForward(6, 12, ignore_terrrain=True)]
     flavor_text = (
         '"Get the sun behind you, and fly Icarus, fly!"'
         '\n— Phent, Oldland Saboteur'
@@ -174,7 +187,7 @@ class JumpPack(Card):
 
 class SlowItDown(Card):
     heat = -2
-    steps = [s.Draw(), s.EndTurn()]
+    steps = [Draw(), EndTurn()]
     flavor_text = (
         '"The oldest titans tread the softest."'
         '\n— Grimsmear the Unyielding'
@@ -182,7 +195,7 @@ class SlowItDown(Card):
 
 class PushOff(Card):
     heat = 1
-    steps = [s.Attack(6, 2), s.MoveAway(6, 12)]
+    steps = [Attack(6, 2), MoveAway(6, 12)]
     flavor_text = (
         '"Give them a nudge into the abyss."'
         '\n— V1ncent, Guerilla Droid'
@@ -190,7 +203,7 @@ class PushOff(Card):
 
 class LaserSnapfire(Card):
     heat = 2
-    steps = [s.Attack(3, 12), s.MoveForward(0, 2)]
+    steps = [Attack(3, 12), MoveForward(0, 2)]
     flavor_text = (
         '"Nuthn\' faster than searing light."'
         '\n— Pyre, Scabland Lantern King'
@@ -198,7 +211,7 @@ class LaserSnapfire(Card):
 
 class BlindingBurst(Card):
     heat = 3
-    steps = [s.Attack(5, 6), s.ForceRotate(90)]
+    steps = [Attack(5, 6), ForceRotate(90)]
     flavor_text = (
         '"A brilliant display to illuminate my victory!"'
         '\n— Reckles, Emberkin'
@@ -206,7 +219,7 @@ class BlindingBurst(Card):
 
 class TrackingShot(Card):
     heat = 2
-    steps = [s.Rotate(0, 90), s.Attack(2, 12), s.Rotate(0, 90)]
+    steps = [Rotate(0, 90), Attack(2, 12), Rotate(0, 90)]
     flavor_text = (
         '"Every target flees - but fate soon follows."'
         '\n— Sgt. Redborn, Artillery Angles'
@@ -214,7 +227,7 @@ class TrackingShot(Card):
 
 class StaggerForward(Card):
     heat = 1
-    steps = [s.Rotate(), s.MoveForward(2, 6)]
+    steps = [Rotate(), MoveForward(2, 6)]
     flavor_text = (
         '"When you can no longer march, fall forward."'
         '\n— Grimsmear the Unyielding'
@@ -222,7 +235,7 @@ class StaggerForward(Card):
 
 class OverdriveServos(Card):
     heat = 1
-    steps = [s.Rotate(0, 180), s.MoveForward(0, 12), s.Retire()]
+    steps = [Rotate(0, 180), MoveForward(0, 12), Retire()]
     flavor_text = (
         '"When metal screams, the battlefield sings."'
         '\n— Zuri, Pole Pos of High Torq'
@@ -231,9 +244,8 @@ class OverdriveServos(Card):
 class DriveBy(Card):
     heat = 3
     steps = [
-        s.MoveForward(2, 6), s.Rotate(0, 180),
-        s.Attack(4, 12), s.MoveForward(2, 6),
-        s.Retire()
+        MoveForward(2, 6), Rotate(0, 180), Attack(4, 12), MoveForward(2, 6),
+        Retire()
     ]
     flavor_text = (
         '"Passing by the gates of hell, we wave with guns blazing."'
@@ -242,7 +254,7 @@ class DriveBy(Card):
 
 class MechanicalFuse(Card):
     heat = -3
-    steps = [s.HurtSelf(2)]
+    steps = [HurtSelf(2)]
     flavor_text = (
         '"Mortality is law. For all life. For all machines."'
         '\n— Segg, Digital Deacon'
@@ -250,7 +262,7 @@ class MechanicalFuse(Card):
 
 class RememberTraining(Card):
     heat = 0
-    steps = [s.Unretire(), s.EndTurn()]
+    steps = [Unretire(), EndTurn()]
     flavor_text = (
         '"Cacophony on the battlefield, symphony in my mind."'
         '\n— Allison the Deadhand'
@@ -258,7 +270,7 @@ class RememberTraining(Card):
 
 class DoItRight(Card):
     heat = 0
-    steps = [s.Unretire(), s.Retire()]
+    steps = [Unretire(), Retire()]
     flavor_text = (
         '"In here, you don\'t get to fail twice."'
         '\n— Seawell Pilot\'s guide'
@@ -266,7 +278,7 @@ class DoItRight(Card):
 
 class HeavyLead(Card):
     heat = 2
-    steps = [s.Attack(6, 12, 6)]
+    steps = [Attack(6, 12, 6)]
     flavor_text = (
         '"Every shot fired leaves a wake."'
         '\n— Carving on Thunder Fortress walls'
@@ -274,20 +286,17 @@ class HeavyLead(Card):
 
 class SupressingFire(Card):
     heat = 4
-    steps = [s.Attack(4, 12), s.MoveAway(2, 6), s.Rotate(0, 90)]
+    steps = [Attack(4, 12), MoveAway(2, 6), Rotate(0, 90)]
     flavor_text = (
-        '"Remember ocean waves. '
+        '"Remember ocean waves.\n'
         'Their fire will crescendo, crest, and break. '
-        'Only then, we move."'
+        'Then, we move."'
         '\n— Cpt. Cho Chun, Seawell Militia'
     )
 
 class SweepingBarrage(Card):
     heat = 4
-    steps = [
-        s.Rotate(0, 180), s.Attack(8, 18, 6),
-        s.Retire(), s.EndTurn()
-    ]
+    steps = [Rotate(0, 180), Attack(8, 18, 6), Retire(), EndTurn()]
     flavor_text = (
         '"Sow the breeze will lead, reap the windfall of victory."'
         '\n— Poorly translated Sand Rambler saying'
@@ -295,23 +304,23 @@ class SweepingBarrage(Card):
 
 class PushForward(Card):
     heat = 0
-    steps = [s.MoveForward(6, 12, ignore_terrrain=True)]
+    steps = [MoveForward(6, 12, ignore_terrrain=True)]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
-class RushingWind(Card):
+class KeepTempo(Card):
     heat = 0
-    steps = [s.Rotate(0, 180), s.MoveForward(6, 12), s.Draw(), s.EndTurn()]
+    steps = [Rotate(0, 180), MoveForward(6, 12), Draw(), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class ChartStudy(Card):
-    heat = 2
-    steps = [s.Rotate(0, 180), s.MoveForward(0, 12), s.EndTurn()]
+    heat = 1
+    steps = [Rotate(0, 180), MoveForward(0, 12), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -319,7 +328,7 @@ class ChartStudy(Card):
 
 class RecallWisdom(Card):
     heat = -1
-    steps = [s.Draw(), s.EndTurn()]
+    steps = [Draw(), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -327,15 +336,15 @@ class RecallWisdom(Card):
 
 class SurveyLandscape(Card):
     heat = -2
-    steps = [s.Rotate(0, 180), s.EndTurn()]
+    steps = [Rotate(0, 180), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class RipVitals(Card):
-    heat = 3
-    steps = [s.Attack(12, 2)]
+    heat = 2
+    steps = [Attack(12, 2)]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -343,15 +352,15 @@ class RipVitals(Card):
 
 class HatefulGlare(Card):
     heat = -1
-    steps = [s.RangeCheck(12, step=s.Rotate(0, 180))]
+    steps = [RangeCheck(12, step=Rotate(0, 180))]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class BoastChallenge(Card):
-    heat = -3
-    steps = [s.RangeCheck(6, step=s.EndTurn())]
+    heat = -6
+    steps = [RangeCheck(6, step=EndTurn())]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -359,39 +368,39 @@ class BoastChallenge(Card):
 
 class TargetedStrike(Card):
     heat = 1
-    steps = [s.Attack(2, 6, 12)]
+    steps = [Attack(2, 6, 12)]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class GiddyRetreat(Card):
-    heat = -2
-    steps = [s.Rotate(0, 180), s.MoveForward(0, 12), s.RotateAway()]
+    heat = 0
+    steps = [Rotate(0, 180), MoveForward(0, 12), RotateAway()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class CoverEyes(Card):
-    heat = -2
-    steps = [s.Draw(), s.Discard(), s.EndTurn()]
+    heat = -3
+    steps = [Draw(), Discard(), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class DriveHarder(Card):
-    heat = 2
-    steps = [s.Rotate(0, 90), s.MoveForward(0, 6), s.Draw()]
+    heat = 3
+    steps = [Rotate(0, 90), MoveForward(0, 6), Draw()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
     )
 
 class LightningInspiration(Card):
-    heat = 3
-    steps = [s.Rotate(0, 90), s.MoveForward(0, 12), s.Draw(), s.EndTurn()]
+    heat = 2
+    steps = [Rotate(0, 90), MoveForward(0, 12), Draw(), EndTurn()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -399,7 +408,65 @@ class LightningInspiration(Card):
 
 class BlissfulIgnorance(Card):
     heat = -3
-    steps = [s.Discard(2)]
+    steps = [Discard(2)]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class SlowSizzle(Card):
+    heat = -2
+    steps = []
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class JettisonHeatsinks(Card):
+    heat = -6
+    steps = [Discard(), Retire()]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class SteamBlowoff(Card):
+    heat = -4
+    steps = [EndTurn()]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class TakeReading(Card):
+    heat = -1
+    steps = [Rotate(90)]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class LockOn(Card):
+    heat = 2
+    steps = [IncreaseRange(6)]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class JoltForward(Card):
+    heat = 1
+    steps = [
+        Rotate(90), MoveForward(10, 12, ignore_terrrain=True), Rotate(90, 90)]
+    flavor_text = (
+        '"TODO"'
+        '\n— TODO'
+    )
+
+class BlastOff(Card):
+    heat = 0
+    steps = [
+        Rotate(90), MoveForward(12, 24, ignore_terrrain=True), Retire()]
     flavor_text = (
         '"TODO"'
         '\n— TODO'
@@ -409,4 +476,13 @@ class BlissfulIgnorance(Card):
 Extraordinary technology brings extraordinary recklessness
 "One man's “magic” is another man's engineering".
 "Science is about knowing; engineering is about doing"
+"""
+
+# Unused card ideas:
+"""
+Fists up - -2 heat, 2" range 2 dmg, end turn
+Madman Theory - something random
+Rushing Wind - -2 heat, move 6-12"
+Wargasm - attack, hurt self, draw card
+Sentient Cruise Missie
 """

@@ -24,7 +24,7 @@ class GameState:
 
         # For stats
         self.turn_lengths = []
-        self.first_blood_turn = 100
+        self.first_blood_turn = None
         self.winner = None
         self.total_melt_dmg = 0
         self.total_weapon_dmg = 0
@@ -80,7 +80,7 @@ class GameState:
         logger.info(f"Dealt {ammount} to {self.enemy_of(attacker)}")
         self.total_weapon_dmg += ammount
 
-        if self.turns < self.first_blood_turn:
+        if self.first_blood_turn is None:
             self.first_blood_turn = self.turns
             logger.info(f"First blood at {self.first_blood_turn}")
 

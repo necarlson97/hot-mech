@@ -1,9 +1,12 @@
 import math
 import random
-from itertools import tee, filterfalse
+import itertools
 
 from src.mech import Mech, Skeleton
 from src.pilot import Pilot
+from src.upgrade import Upgrade, Tassles
+from src.utils import get_range
+from src.card_steps import Attack
 
 import logging
 logger = logging.getLogger("HotMech")
@@ -22,10 +25,17 @@ class Player:
         self.pilot = pilot_type(game_state, self)
         self.mech = mech_type(game_state, self)
         self.upgrades = [u(game_state, self) for u in upgrade_types]
-        self.deck = (
-            self.pilot.cards + self.mech.cards
-            + [u.cards for u in self.upgrades]
-        )
+        # Remove any that is more than hardpoints
+        if len(self.upgrades) > self.mech.hard_points:
+            logger.warning(
+                f"More upgrades than hardpoints:"
+                f"{self.upgrades} {self.mech} {self.mech.hard_points}"
+            )
+            self.upgrades = self.upgrades[0:self.mech.hard_points]
+        self.deck = list(itertools.chain(
+            self.pilot.cards, self.mech.cards,
+            *[u.cards for u in self.upgrades]
+        ))
 
         self.discard = []
         self.hand = []
@@ -63,6 +73,13 @@ class Player:
             self.largest_hand = len(self.hand)
 
     def take_turn(self, card_limit=None):
+        # If our hand is still full from last turn,
+        # discard some cards
+        # TODO are we allowed? Or are we forced to play,
+        # and take heat?
+        if (len(self.hand) > 4):
+            self.throw_away(5 - len(self.hand))
+
         for i in range(self.starting_hand - len(self.hand)):
             self.draw_card()
 
@@ -74,16 +91,11 @@ class Player:
 
         self.turn_cards = 0
         while self.my_turn and self.turn_cards < 100:
-            # Maybe discard some cards
-            # TODO are we allowed? Or are we forced to play,
-            # and take heat?
-            if (self.turn_cards < 3):
-                self.throw_away(3 - self.turn_cards)
-
             card = self.choose_card()
 
             # If we can't play anything
             if card is None:
+                logger.info(f"{self} can't choose card {self.hand}")
                 break
 
             self.play_card(card)
@@ -125,9 +137,19 @@ class Player:
         3. As a tiebreaker, which card has the lower 'card.heat' cost
         """
 
+        def dmg(card):
+            # Prioritize cards that deal damage
+            # (negative = sorted earlier = better)
+            for s in card.steps:
+                if isinstance(s, Attack):
+                    return -s.damage
+            return 0
+
         s_hand = sorted(
             cards,
-            key=lambda card: (not card.should(), not card.can(), card.heat)
+            key=lambda card: (
+                not card.should(), -card.how_many_can(), dmg(card), card.heat
+            )
         )
         if reverse:
             s_hand.reverse()
@@ -203,8 +225,7 @@ class Player:
         """
         Return true if our location is within a specified range of the enemy
         """
-        min_range = min(range_a, range_b)
-        max_range = max(range_a, range_b)
+        min_range, max_range = get_range(range_a, range_b)
         return min_range <= self.distance_to_enemy() <= max_range
 
     def move_toward(self, range_max=6, range_min=0, ignore_terrrain=False):
@@ -257,8 +278,10 @@ class Player:
     def difficult_terrain(self):
         # For now, to handle crashing into terrain,
         # just make it an occasional random thing
-        if random.randint(0, 10) == 0:
-            self.mech.hp -= random.randint(1, 6)
+        # if random.randint(0, 10) == 0:
+        #     self.mech.hp -= random.randint(1, 6)
+        # TODO eh, do we care?
+        pass
 
     def rotate_towards(self, rot_max=90, rot_min=0):
         """
@@ -299,6 +322,7 @@ class Player:
             f"({self.pilot.name}, {self.mech.name} "
             f"{self.mech.heat}h {self.mech.hp}hp)"
         )
+
     def __repr__(self):
         return self.__str__()
 
@@ -308,14 +332,24 @@ class Choices:
     their pilot type, mech type, etc
     """
 
-    def __init__(self, ct=None, mt=None):
+    def __init__(self, ct=None, mt=None, ut=[]):
         all_pilots = list(Pilot.all_types.values())
         self.pilot_type = ct or random.choice(all_pilots)
+
+        # Do we simulate skeleton? So just pilot / upgrades?
         all_mechs = list(Mech.all_types.values())
-        # Don't choose skeleton
         all_mechs.remove(Skeleton)
+
+        all_upgrades = list(Upgrade.all_types.values())
+
         self.mech_type = mt or random.choice(all_mechs)
-        # TODO upgrades
+        self.upgrade_types = ut or [
+            random.choice(all_upgrades)
+            for i in range(self.mech_type.hard_points)
+        ]
 
     def create_player(self, game_state):
-        return Player(game_state, self.pilot_type, self.mech_type)
+        return Player(
+            game_state,
+            self.pilot_type, self.mech_type, self.upgrade_types
+        )

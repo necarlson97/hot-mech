@@ -6,7 +6,7 @@ class Upgrade(NamedClass):
     card_types = []
 
     def __init__(self, game_state, player):
-        self.cards = [card() for card in self.card_types]
+        self.cards = [card(game_state, player) for card in self.card_types]
 
     # A dict that holds all defined cards by:
     # string of class name -> type
@@ -22,3 +22,50 @@ Below, all upgrades are defined:
 """
 class Tassles(Upgrade):
     card_types = []
+
+class EjectableHeatsink(Upgrade):
+    card_types = [
+        cards.SlowSizzle,
+        cards.SlowSizzle,
+        cards.JettisonHeatsinks
+    ]
+
+class RhodiumRadiators(Upgrade):
+    card_types = [
+        cards.SlowSizzle,
+        cards.SlowSizzle,
+        cards.SteamBlowoff
+    ]
+
+class SensorArray(Upgrade):
+    card_types = [
+        cards.TakeReading,
+        cards.TakeReading,
+        cards.LockOn,
+        cards.LockOn,
+    ]
+
+class Misslepod(Upgrade):
+    card_types = [
+        cards.LooseMissile,
+        cards.LooseMissile,
+        cards.MissileHail,
+        cards.MissileHail,
+    ]
+
+class SolidBoosters(Upgrade):
+    card_types = [
+        cards.JoltForward,
+        cards.JoltForward,
+        cards.BlastOff,
+    ]
+
+"""
+class TODO(Upgrade):
+    card_types = [
+        cards.todo,
+        cards.todo,
+        cards.todo,
+        cards.todo,
+    ]
+"""

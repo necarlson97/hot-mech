@@ -4,6 +4,7 @@
     --candle: #FECDA6;
     --cool: #b4efff;
     --subtle: #A9A9A9;
+    --subtle-light: #d6d6d6;
     --bg: #505050;
 }
 
@@ -30,6 +31,7 @@ body {
     font-family: Arial, sans-serif;
     padding: 0em;
     background-color: var(--bg);
+    font-size: 14px;
 }
 h1 {
     padding: 0em;
@@ -58,7 +60,7 @@ h1 {
 }
 
 .card-header, .card-image {
-    border-bottom: 2px solid var(--subtle);
+/*    border-bottom: 2px solid var(--subtle);*/
 }
 
 .card-header {
@@ -89,9 +91,10 @@ h1 {
 
 .card-image {
     width: auto;
-    min-height: 4cm;
-    max-height: 4cm;
+    min-height: 4.725cm;
+    max-height: 4.725cm;
     object-fit: contain;
+    object-position: bottom;
 }
 
 .card-body {
@@ -109,11 +112,41 @@ h1 {
     padding: .5em;
     padding-top: 0em;
     font-style: italic;
-    font-size: 0.7em;
+    font-size: 0.6em;
     color: gray;
     white-space: pre-line;
     margin-top: auto;
+    text-align: center;
 }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    font-weight: bold;
+    text-align: left;
+}
+
+td, th {
+    border: 1px solid #ddd;
+    padding: 8px;
+    vertical-align: top;
+}
+
+td.name {
+    font-size: 1.2em;
+}
+
+tr:nth-child(even) {
+    background-color: var(--subtle-light);
+}
+
+tr:nth-child(odd) {
+    background-color: var(--bg);
+}
+
 
 /*.page-break {
     display: none;

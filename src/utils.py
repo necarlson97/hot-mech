@@ -14,9 +14,25 @@ def snake_to_title(text):
         ' '.join(word.title() for word in re.split('[_-]', text) if word)
     )
 
+def get_range(range_a, range_b=None):
+    """
+    Given a min and max, return a tuple of min, max.
+    If a single tuple argument is given, return it.
+    If two arguments are given, order them and return as (min, max).
+    """
+    if isinstance(range_a, tuple):
+        return range_a
+    else:
+        if range_b is not None:
+            return (min(range_a, range_b), max(range_a, range_b))
+        else:
+            return (0, range_a)
+
 class NamedClassMeta(type):
-    # Just a little helper metaclass to keep track of each types name
-    # even without instantiation
+    """
+    Just a little helper metaclass to keep track of each types name
+    even without instantiation
+    """
     def __new__(cls, name, bases, dct):
         new_class = super().__new__(cls, name, bases, dct)
         new_class.name = camel_to_hypens(name)
@@ -33,7 +49,7 @@ class NamedClass(metaclass=NamedClassMeta):
         return snake_to_title(cls.name)
 
     def __str__(self):
-        return f"{self.name} {self.steps}"
+        return f"{self.name}"
 
     def __repr__(self):
         return self.__str__()

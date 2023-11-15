@@ -98,5 +98,32 @@
             </div>
         {% endfor %}
     </div>
+
+    <h2>All Cards - Table View</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Card Name</th>
+                <th>Heat Cost</th>
+                <th>Explainer</th>
+                <th>Flavor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card_type in Card.all_types.values() %}
+                <tr>
+                    <td class="name">{{ card_type.human_name() }}</td>
+                    <td class='card-heat'>{{ card_type.heat }}</td>
+                    <td>
+                        {% for step in card_type.steps %}
+                            <p>{{ '‣' + step.explainer() }}</p>
+                        {% endfor %}
+                    </td>
+                    <td>{{ card_type.flavor_text }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
 </body>
 </html>

@@ -1,5 +1,6 @@
 from jinja2 import Environment, FileSystemLoader
 import os
+import glob
 
 from src.game_state import GameState
 from src.mech import Mech
@@ -9,7 +10,6 @@ from src.card import Card
 
 # Set up Jinja2 environment
 env = Environment(loader=FileSystemLoader('templates'))
-template = env.get_template('printout.j2')
 
 # Render the template with your data
 gs = GameState()
@@ -25,11 +25,16 @@ upgrades = [
     u for u in Upgrade.all_types.values()
     if u.card_types != []
 ]
-rendered_html = template.render(
-    mechs=mechs, pilots=pilots, upgrades=upgrades, Card=Card)
 
-# Write the output to an HTML file
-with open('templates/printout.html', 'w') as file:
-    file.write(rendered_html)
+for template_file in glob.glob('templates/*.j2'):
+    # Extract the template name without extension
+    template_name = os.path.basename(template_file).split('.')[0]
+    rendered_html = env.get_template(f'{template_name}.j2').render(
+        mechs=mechs, pilots=pilots, upgrades=upgrades, Card=Card
+    )
+
+    # Write the output to an HTML file
+    with open(f'templates/{template_name}.html', 'w') as file:
+        file.write(rendered_html)
 
 print("Template rendered successfully!")

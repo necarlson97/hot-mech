@@ -1,3 +1,8 @@
+from src.utils import NamedClass, get_range
+
+import logging
+logger = logging.getLogger("HotMech")
+
 class Step(NamedClass):
     """
     Abstract class, that each specific type of step will sub-class.
@@ -21,13 +26,22 @@ class Step(NamedClass):
         """
         raise NotImplemented()
 
-    def x_cards(self):
+    def x_cards_str(self):
         """
-        Just a helpful plurilization shorthand for 'a card' vs 'x cards'
+        Just a helpful plurilization shorthand for explainer
         """
         return (
             "a card" if self.number_of_cards < 2
             else f"{self.number_of_cards} cards"
+        )
+
+    def range_str(self, unit='"'):
+        """
+        Just a helpful x-x" for explainer
+        """
+        return (
+            f"{self.min}-{self.max}{unit}" if self.max != self.min
+            else f" ~{self.max}{unit}"
         )
 
     # A dict that holds all defined cards by:
@@ -43,9 +57,8 @@ class Step(NamedClass):
 Below, all step types are defined:
 """
 class MoveForward(Step):
-    def __init__(self, min_move=0, max_move=6, ignore_terrrain=False):
-        self.min = min_move
-        self.max = max_move
+    def __init__(self, max_move=6, min_move=0, ignore_terrrain=False):
+        self.min, self.max = get_range(min_move, max_move)
         self.ignore_terrrain = ignore_terrrain
 
     def play(self, card):
@@ -54,7 +67,7 @@ class MoveForward(Step):
 
     def explainer(self):
         return (
-            f"Move forward {self.min}-{self.max}\""
+            f"Move forward {self.range_str()}"
             + (", ignoring terrain" if self.ignore_terrrain else "")
         )
 
@@ -65,9 +78,8 @@ class MoveForward(Step):
         return int(c)
 
 class MoveAway(Step):
-    def __init__(self, min_move=0, max_move=6):
-        self.min = min_move
-        self.max = max_move
+    def __init__(self, max_move=6, min_move=0):
+        self.min, self.max = get_range(min_move, max_move)
 
     def play(self, card):
         card.player.move_away(self.max, self.min)
@@ -75,17 +87,15 @@ class MoveAway(Step):
 
     def explainer(self):
         return (
-            f"Move away "
-            f"{self.min}-{self.max}\""
+            f"Move away {self.range_str()}"
         )
 
     def cost(self):
         return (self.max // 6) - (self.min // 6) - 1
 
 class Rotate(Step):
-    def __init__(self, min_rot=0, max_rot=90):
-        self.min = min_rot
-        self.max = max_rot
+    def __init__(self, max_rot=90, min_rot=0):
+        self.min, self.max = get_range(min_rot, max_rot)
         if self.max > 180:
             self.max = 180
 
@@ -95,7 +105,7 @@ class Rotate(Step):
 
     def explainer(self):
         return (
-            f"Rotate +/- {self.min}°-{self.max}°"
+            f"Rotate +/- {self.range_str('°')}"
         )
 
     def cost(self):
@@ -112,7 +122,7 @@ class ForceRotate(Step):
 
     def explainer(self):
         return (
-            f"Rotate the enemy {self.rotation}° right"
+            f"Rotate the enemy +/- ~{self.rotation}°"
         )
 
     def cost(self):
@@ -120,12 +130,11 @@ class ForceRotate(Step):
 
 class Attack(Step):
     def __init__(self, damage=4, max_range=6, min_range=0):
-        self.max = max_range
-        self.min = min_range
+        self.min, self.max = get_range(min_range, max_range)
         self.damage = damage
 
     def play(self, card):
-        if card.player.facing_toward_enemy() and self.can(card):
+        if self.can(card):
             card.game_state.damage_enemy(card.player, self.damage)
             logger.info(f"Attacked for {self.damage}")
 
@@ -133,11 +142,14 @@ class Attack(Step):
         """
         Is enemy in range
         """
-        return card.player.in_range(self.min, self.max)
+        return (
+            card.player.facing_toward_enemy()
+            and card.player.in_range(self.min, self.max)
+        )
 
     def explainer(self):
         return (
-            f"If within {self.min}-{self.max}\", deal {self.damage} damage"
+            f"{self.range_str()} range, deal {self.damage} damage"
         )
 
     def cost(self):
@@ -176,7 +188,7 @@ class Unretire(Step):
         )
 
     def can(self, card):
-        return len(card.player.retired) >= self.number_of_cards
+        return len(card.player.retired) > 0
 
     def cost(self):
         return 3 * self.number_of_cards
@@ -190,7 +202,7 @@ class Draw(Step):
             card.player.draw_card()
 
     def explainer(self):
-        return f"Draw {self.x_cards()}"
+        return f"Draw {self.x_cards_str()}"
 
     def cost(self):
         return 2 * self.number_of_cards
@@ -207,6 +219,22 @@ class EndTurn(Step):
     def cost(self):
         return -3
 
+class Discard(Step):
+    def __init__(self, number_of_cards=1):
+        self.number_of_cards = number_of_cards
+
+    def play(self, card):
+        for i in range(self.number_of_cards):
+            card.player.throw_away()
+
+    def explainer(self):
+        return (
+            f"Discard {self.x_cards_str()}"
+        )
+
+    def cost(self):
+        return -1 * self.number_of_cards
+
 class EnemyDiscard(Step):
     def __init__(self, number_of_cards=1):
         self.number_of_cards = number_of_cards
@@ -216,11 +244,11 @@ class EnemyDiscard(Step):
             card.player.get_enemy().throw_away()
 
     def can(self, card):
-        return len(card.player.get_enemy().hand) >= self.number_of_cards
+        return len(card.player.get_enemy().hand) > 0
 
     def explainer(self):
         return (
-            f"Enemy must discard {self.x_cards()}"
+            f"Enemy must discard {self.x_cards_str()}"
         )
 
     def cost(self):
@@ -255,3 +283,90 @@ class HurtSelf(Step):
 
     def cost(self):
         return -self.damage // 2
+
+class RangeCheck(Step):
+    """
+    Add a conditional check to see if we can play the next step
+    """
+    # TODO could add a more abstract 'ConditionalStep'
+    # and maybe even use a predicate or something
+
+    def __init__(self, max_range=6, min_range=0, step=None):
+        if step is None:
+            raise ValueError("None passed for step")
+        self.min, self.max = get_range(min_range, max_range)
+        self.step = step
+
+    def play(self, card):
+        if not self.can(card):
+            return
+        self.step.play(card)
+
+    def explainer(self):
+        return (
+            f"{self.range_str()} range, "
+            + self.step.explainer()
+        )
+
+    def can(self, card):
+        return (
+            card.player.in_range(self.min, self.max)
+            and self.step.can(card)
+        )
+
+    def cost(self):
+        """
+        Subtract some cost from the step:
+        If the range is very usable, then don't subtract much
+        """
+        usable_range = self.max / 3 - self.min / 3
+        best_case = -5
+        cost_decrease = min(best_case + usable_range, 0)
+        return cost_decrease + self.step.cost()
+
+
+class RotateAway(Step):
+    """
+    Rotate myself so I face away from the enemy
+    """
+
+    def play(self, card):
+        card.player.rotation = (card.player.angle_to_enemy() + 180) % 360
+
+    def explainer(self):
+        return (
+            f"Rotate to face away from the enemy"
+        )
+
+    def cost(self):
+        return -2
+
+class IncreaseRange(Step):
+    """
+    Increase next card's max range
+    """
+
+    def __init__(self, add=6):
+        self.add = add
+
+    def play(self, card):
+        if not self.can(card):
+            return
+        # TODO technically this isn't the 'next card'
+        # - but close enough
+        self.boostable_cards(card)[0].max += self.add
+
+    def boostable_cards(self, card):
+        hand = card.player.hand
+        return [c for c in hand if hasattr(c, "max")]
+
+    def can(self, card):
+        return self.boostable_cards(card) != []
+
+    def explainer(self):
+        return (
+            f"Increase next card's max by {self.add}\""
+        )
+
+    def cost(self):
+        return 1 + self.add / 3

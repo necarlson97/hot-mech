@@ -13,7 +13,7 @@ class Pilot(NamedClass):
     card_types = []
 
     def __init__(self, game_state, player):
-        self.cards = [card() for card in self.card_types]
+        self.cards = [card(game_state, player) for card in self.card_types]
 
     # A dict that holds all defined cards by:
     # string of class name -> type
@@ -35,7 +35,7 @@ class ValorantStrider(Pilot):
         cards.PushForward,
         cards.PushForward,
         cards.StandingSwivel,
-        cards.RushingWind,
+        cards.KeepTempo,
     ]
 
 class LearnedTactician(Pilot):
@@ -51,7 +51,7 @@ class VeteranOfWrath(Pilot):
         cards.RipVitals,
         cards.RipVitals,
         cards.HatefulGlare,
-        cards.BoastfulChallenge,
+        cards.BoastChallenge,
     ]
 
 class WileyScavenger(Pilot):
@@ -69,7 +69,3 @@ class BeguiledZealot(Pilot):
         cards.LightningInspiration,
         cards.BlissfulIgnorance,
     ]
-
-"""
-cards.MadmanTheory - something random
-"""
