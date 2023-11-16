@@ -10,6 +10,9 @@ class Step(NamedClass):
     with the parameters it uses (e.g. 'Move' with '0-6"')
     """
 
+    # is this step's 'can' required to play the card?
+    mandatory = False
+
     def play(self, card):
         pass
 
@@ -57,25 +60,25 @@ class Step(NamedClass):
 Below, all step types are defined:
 """
 class MoveForward(Step):
-    def __init__(self, max_move=6, min_move=0, ignore_terrrain=False):
+    def __init__(self, max_move=6, min_move=0, flying=False):
         self.min, self.max = get_range(min_move, max_move)
-        self.ignore_terrrain = ignore_terrrain
+        self.flying = flying
 
     def play(self, card):
-        card.player.move_toward(self.max, self.min, self.ignore_terrrain)
+        card.player.move_toward(self.max, self.min, self.flying)
         # logger.info(f"Moved {card.player} to {card.player.location}")
 
     def explainer(self):
         return (
-            f"Move forward {self.range_str()}"
-            + (", ignoring terrain" if self.ignore_terrrain else "")
+            ("Fly" if self.flying else "Move")
+            + f" forward {self.range_str()}"
         )
 
     def cost(self):
         c = (self.max - self.min) / 6
-        if self.ignore_terrrain:
-            c *= 2
-        return int(c)
+        if self.flying:
+            c += 1
+        return max(int(c), 1)
 
 class MoveAway(Step):
     def __init__(self, max_move=6, min_move=0):
@@ -91,7 +94,7 @@ class MoveAway(Step):
         )
 
     def cost(self):
-        return (self.max // 6) - (self.min // 6) - 1
+        return (self.max - self.min) // 3
 
 class Rotate(Step):
     def __init__(self, max_rot=90, min_rot=0):
@@ -153,14 +156,15 @@ class Attack(Step):
         )
 
     def cost(self):
-        usable_range = self.max / 3 - self.min / 3
-        dmg_mult = self.damage / 3
+        usable_range = self.max / 4 - self.min / 4
+        usable_range = max(usable_range, 1)
+        dmg_mult = self.damage / 2
+        dmg_mult = max(dmg_mult, 1)
         return int(usable_range * dmg_mult)
 
 class Retire(Step):
     def play(self, card):
-        card.player.discard.remove(card)
-        card.player.retired.append(card)
+        card.player.retire(card)
 
     def explainer(self):
         return (
@@ -168,7 +172,7 @@ class Retire(Step):
         )
 
     def cost(self):
-        return -3
+        return -2
 
 class Unretire(Step):
     def __init__(self, number_of_cards=1):
@@ -188,10 +192,11 @@ class Unretire(Step):
         )
 
     def can(self, card):
-        return len(card.player.retired) > 0
+        # Can't unretire same card
+        return len([c for c in card.player.retired if c.name != card.name]) > 0
 
     def cost(self):
-        return 3 * self.number_of_cards
+        return 4 * self.number_of_cards
 
 class Draw(Step):
     def __init__(self, number_of_cards=1):
@@ -224,8 +229,7 @@ class Discard(Step):
         self.number_of_cards = number_of_cards
 
     def play(self, card):
-        for i in range(self.number_of_cards):
-            card.player.throw_away()
+        card.player.discard(self.number_of_cards)
 
     def explainer(self):
         return (
@@ -241,7 +245,7 @@ class EnemyDiscard(Step):
 
     def play(self, card):
         for i in range(self.number_of_cards):
-            card.player.get_enemy().throw_away()
+            card.player.get_enemy().discard()
 
     def can(self, card):
         return len(card.player.get_enemy().hand) > 0
@@ -252,7 +256,7 @@ class EnemyDiscard(Step):
         )
 
     def cost(self):
-        return 2 * self.number_of_cards
+        return 3 * self.number_of_cards
 
 class HeatEnemy(Step):
     def __init__(self, heat=1):
@@ -276,13 +280,16 @@ class HurtSelf(Step):
     def play(self, card):
         card.player.mech.hp -= self.damage
 
+    def can(self, card):
+        return card.player.mech.hp > self.damage
+
     def explainer(self):
         return (
             f"Deal {self.damage} damage to yourself"
         )
 
     def cost(self):
-        return -self.damage // 2
+        return -self.damage
 
 class RangeCheck(Step):
     """
@@ -304,7 +311,7 @@ class RangeCheck(Step):
 
     def explainer(self):
         return (
-            f"{self.range_str()} range, "
+            f"If within {self.range_str()}, "
             + self.step.explainer()
         )
 
@@ -320,9 +327,41 @@ class RangeCheck(Step):
         If the range is very usable, then don't subtract much
         """
         usable_range = self.max / 3 - self.min / 3
+        usable_range = max(usable_range, 1)
         best_case = -5
         cost_decrease = min(best_case + usable_range, 0)
         return cost_decrease + self.step.cost()
+
+class MandatoryRange(Step):
+    """
+    Card can only be played if within X
+    """
+    mandatory = True
+
+    def __init__(self, max_range=6, min_range=0):
+        self.min, self.max = get_range(min_range, max_range)
+
+    def play(self, card):
+        pass
+
+    def explainer(self):
+        return (
+            f"Must be within {self.range_str()} to play this"
+        )
+
+    def can(self, card):
+        return card.player.in_range(self.min, self.max)
+
+    def cost(self):
+        """
+        Subtract some cost from the step:
+        If the range is very usable, then don't subtract much
+        """
+        usable_range = self.max / 3 - self.min / 3
+        usable_range = max(usable_range, 1)
+        best_case = -5
+        cost_decrease = min(best_case + usable_range, 0)
+        return cost_decrease
 
 
 class RotateAway(Step):
@@ -354,6 +393,7 @@ class IncreaseRange(Step):
             return
         # TODO technically this isn't the 'next card'
         # - but close enough
+        # TODO this should be temporary...
         self.boostable_cards(card)[0].max += self.add
 
     def boostable_cards(self, card):

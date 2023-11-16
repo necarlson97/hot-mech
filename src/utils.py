@@ -48,8 +48,27 @@ class NamedClass(metaclass=NamedClassMeta):
     def human_name(cls):
         return snake_to_title(cls.name)
 
+    @classmethod
+    def short_name(cls):
+        # 1s word plus 1st letter of next word
+        words = cls.name.split('-')
+        if len(words) == 1:
+            return words[0]
+        return words[0].title() + cls.name.split('-')[1][0].title()
+
     def __str__(self):
         return f"{self.name}"
 
     def __repr__(self):
         return self.__str__()
+
+    # A dict that holds all defined subtypes by:
+    # string of class name -> type
+    # (just for checking name conflicts)
+    all_named_types = {}
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        # Register each subclass in the all_cards dictionary
+        cls.all_named_types[cls.__name__] = cls
+        # TODO check for conflict here

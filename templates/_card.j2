@@ -1,0 +1,20 @@
+{% macro build_card(card_type) %}
+    <div class="card">
+        <div class="card-header">
+            <span class="card-name">{{ card_type.human_name() }}</span>
+            <span class="card-heat">{{ card_type.heat }}</span>
+        </div>
+        <img src="images/{{ card_type.name }}.png" class="card-image">
+        <div class="card-body">
+            {% for step in card_type.steps %}
+                <p>{{ '‣' + step.explainer() }}</p>
+            {% endfor %}
+            {#
+            {%  if  card_type.can_block() %}
+                <i>{{ '▪' + card_type.block_explainer() }}</i>
+            {%  endif  %}
+            #}
+        </div>
+        <div class="card-footer">{{ card_type.flavor_text }}</div>
+    </div>
+{% endmacro %}

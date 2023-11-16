@@ -33,12 +33,14 @@ body {
     background-color: var(--bg);
     font-size: 14px;
 }
-h1 {
+h2 {
     padding: 0em;
+    margin: .3em;
+    font-size: 1em;
 }
 
 .mech-section {
-    page-break-after: always;
+    page-break-inside: avoid;
 }
 
 .cards-container {
@@ -48,8 +50,8 @@ h1 {
 }
 
 .card {
-    width: 6.3cm;
-    height: 8.8cm;
+    width: 6.2cm;
+    height: 8.7cm;
     border: 2px solid var(--subtle);
     border-radius: .5em;
     overflow: hidden;
@@ -104,8 +106,11 @@ h1 {
     flex-direction: column;
 }
 
-.card-body p {
+.card-body p, .card-body i {
     margin: .1em 0em;
+}
+.card-body i {
+    padding-top: .2em;
 }
 
 .card-footer {
@@ -148,14 +153,49 @@ tr:nth-child(odd) {
 }
 
 
-/*.page-break {
+.page-break {
     display: none;
 }
 
 @media print {
     .page-break {
         display: block;
-        page-break-before: always;
+        page-break-after: always;
     }
 }
-*/
+
+.meta-rules {
+    width: 8in;
+    height: 10in;
+/*    border: 1px solid var(--subtle);*/
+    font-size: 12px;
+}
+
+.quick-guide {
+    position: absolute;
+    left: 20em;
+    top: 12em;
+    border: 1px solid var(--subtle);
+    padding: 1em;
+    width: 4.5in;
+}
+
+/* TODO scss */
+.quick-guide h1, .meta-rules h1 {
+    margin: .3em;
+    margin-bottom: .8em;
+    padding: 0em;
+    font-size: 1.4em;
+}
+.quick-guide h3, .meta-rules h3 {
+    margin: .3em;
+    margin-bottom: .8em;
+    padding: 0em;
+    font-size: 1.2em;
+}
+.quick-guide h4, .meta-rules h4 {
+    margin: .3em;
+    margin-bottom: .8em;
+    padding: 0em;
+    font-size: 1em;
+}

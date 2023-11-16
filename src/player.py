@@ -36,8 +36,10 @@ class Player:
             self.pilot.cards, self.mech.cards,
             *[u.cards for u in self.upgrades]
         ))
+        random.shuffle(self.deck)
+        self.starting_deck_size = len(self.deck)
 
-        self.discard = []
+        self.discarded = []
         self.hand = []
         self.retired = []
 
@@ -50,12 +52,16 @@ class Player:
         self.empty_hands = 0
         self.turn_cards = 0
 
+        # Keep track of every card type played
+        # TODO could do by turn or whatever, but eh
+        self.played_cards = []
+
     def draw_card(self):
         # If we are out of cards, shuffle back in discard
         if (self.deck == []):
 
             # If discard is empty, all cards are retired / in hand?
-            if (self.discard == []):
+            if (self.discarded == []):
                 # logger.warning(
                 #     f"{self} draw and discard empty. "
                 #     f"Hand: {[c.name for c in self.hand]}. "
@@ -63,8 +69,8 @@ class Player:
                 # )
                 return
 
-            self.deck = random.sample(self.discard, len(self.discard))
-            self.discard = []
+            self.deck = random.sample(self.discarded, len(self.discarded))
+            self.discarded = []
 
         new_card = self.deck.pop()
         self.hand.append(new_card)
@@ -72,16 +78,19 @@ class Player:
         if len(self.hand) > self.largest_hand:
             self.largest_hand = len(self.hand)
 
+    def draw_hand(self):
+        for i in range(self.starting_hand - len(self.hand)):
+            self.draw_card()
+
     def take_turn(self, card_limit=None):
         # If our hand is still full from last turn,
         # discard some cards
         # TODO are we allowed? Or are we forced to play,
         # and take heat?
         if (len(self.hand) > 4):
-            self.throw_away(5 - len(self.hand))
+            self.discard(5 - len(self.hand))
 
-        for i in range(self.starting_hand - len(self.hand)):
-            self.draw_card()
+        self.draw_hand()
 
         # TODO is heat subtracted, reset, or untouched at the start of a turn?
         self.mech.heat -= 1
@@ -114,14 +123,14 @@ class Player:
             f"{self} playing {card.name} ({card.should()}/{card.can()})")
 
         self.hand.remove(card)
-        self.discard.append(card)
+        self.discarded.append(card)
         card.play()
 
         self.get_enemy().mech.check_heat()
         self.mech.check_heat()
 
         self.turn_cards += 1
-        self.played_cards += 1
+        self.played_cards.append(type(card))
 
     def end_turn(self):
         self.my_turn = False
@@ -148,7 +157,7 @@ class Player:
         s_hand = sorted(
             cards,
             key=lambda card: (
-                not card.should(), -card.how_many_can(), dmg(card), card.heat
+                not card.should(), -card.how_many_can(), card.heat, dmg(card)
             )
         )
         if reverse:
@@ -196,16 +205,31 @@ class Player:
         Return true if our location/rotation is pointing toward
         the enemy location
         """
+        return self.check_facing()
 
+    def facing_away(self):
+        """
+        Return true if butt is exposed
+        """
+        return self.check_facing(180)
+
+    def check_facing(self, add_angle=0, tolerance=45):
+        """
+        Check our facing relative to the enemy
+        (+/- tolerance degrees)
+        """
         # Normalize angles to 0-360
         self.rotation = self.rotation % 360
+
+        # Can use 'add_angle' to see if we are facing away, looking left, etc
+        check_rotation = self.rotation + add_angle
+
         angle_to_enemy = self.angle_to_enemy()
 
         # Determine if the player is facing the enemy,
         # considering a margin for 'facing towards'
-        facing_margin = 45  # +/- degrees considered as facing toward the enemy
-        lower_bound = (self.rotation - facing_margin) % 360
-        upper_bound = (self.rotation + facing_margin) % 360
+        lower_bound = (check_rotation - tolerance) % 360
+        upper_bound = (check_rotation + tolerance) % 360
 
         # Check if the enemy is within the 'facing towards' margin
         if lower_bound < upper_bound:
@@ -228,7 +252,7 @@ class Player:
         min_range, max_range = get_range(range_a, range_b)
         return min_range <= self.distance_to_enemy() <= max_range
 
-    def move_toward(self, range_max=6, range_min=0, ignore_terrrain=False):
+    def move_toward(self, range_max=6, range_min=0, flying=False):
         """
         If we are facing toward the enemy, move towards them the max
         (or 1 in front of them, if we are able)
@@ -248,7 +272,7 @@ class Player:
         self.move(move_distance)
 
         forced_move = move_distance == range_min and range_min > 0
-        if not ignore_terrrain and forced_move:
+        if not flying and forced_move:
             self.difficult_terrain()
 
     def move_away(self, range_max=6, range_min=0):
@@ -306,7 +330,7 @@ class Player:
     def get_enemy(self):
         return self.game_state.enemy_of(self)
 
-    def throw_away(self, number_of_cards=1):
+    def discard(self, number_of_cards=1):
         """
         Discard a card
         """
@@ -315,12 +339,84 @@ class Player:
                 return
             card = self.sorted_hand(reverse=True)[0]
             self.hand.remove(card)
-            self.discard.append(card)
+            self.discarded.append(card)
+
+    def retire(self, card):
+        if card in self.hand:
+            self.hand.remove(card)
+        if card in self.discarded:
+            self.discarded.remove(card)
+        # If it was shuffled in after a discard
+        if card in self.deck:
+            self.deck.remove(card)
+        self.retired.append(card)
+        logger.info(
+            f"{self} retired {card.name} "
+            f"(deck: {len(self.deck + self.discarded)} "
+            f"retired: {len(self.retired)})"
+        )
+
+    def healthy_enough(self, damage):
+        """
+        Do we have enough hp to take a hit and not really care?
+        """
+        health_after = self.mech.hp - damage
+        return health_after > (self.mech.max_hp // 2)
+
+    def get_sacrafice_card(self, damage):
+        """
+        When taking damedge, we have the ability to block some/all of it
+        by retiring a card
+        """
+        if self.hand == [] or self.healthy_enough(damage):
+            return None
+        sorted_hand = self.sorted_cards(self.hand, reverse=True)
+
+        # Ignore cards that can't block
+        sorted_hand = [s for s in sorted_hand if s.should_block()]
+        if sorted_hand == []:
+            return None
+
+        # Also sort by:
+        # 1. Ideally, block exactly what we need
+        # 2. Otherwise, more is okay,
+        # 3. Otherwise, less is fine
+        sorted_hand = sorted(
+            sorted_hand,
+            key=lambda card: (
+                -card.heat == damage, -card.heat > damage, card.heat < damage
+            )
+        )
+        return sorted_hand[0]
+
+    def all_cards(self):
+        return self.deck + self.hand + self.discarded + self.retired
+
+    def create_card(self, card_type):
+        # Create a new instance, and add to deck
+        self.deck.append(card_type(self.game_state, self))
+        self.starting_deck_size = len(self.deck)
+
+    def check_cards(self):
+        # Lets make sure no cards were 'lost'
+        msg = (
+            f"{len(self.all_cards())} != {self.starting_deck_size}"
+            f"\n Retired ({len(self.retired)}): "
+            f"{[c.name for c in self.retired]}"
+            f"\n Hand ({len(self.hand)}): "
+            f"{[c.name for c in self.hand]}"
+            f"\n Discard ({len(self.discarded)}): "
+            f"{[c.name for c in self.discarded]}"
+            f"\n Deck ({len(self.deck)}): "
+            f"{[c.name for c in self.deck]}"
+        )
+        assert len(self.all_cards()) == self.starting_deck_size, msg
 
     def __str__(self):
         return (
-            f"({self.pilot.name}, {self.mech.name} "
+            f"({self.pilot.short_name()}, {self.mech.short_name()} "
             f"{self.mech.heat}h {self.mech.hp}hp)"
+            f"{[u.short_name() for u in self.upgrades]}"
         )
 
     def __repr__(self):
@@ -347,6 +443,14 @@ class Choices:
             random.choice(all_upgrades)
             for i in range(self.mech_type.hard_points)
         ]
+        if not isinstance(self.upgrade_types, list):
+            self.upgrade_types = [self.upgrade_types]
+
+        assert issubclass(self.pilot_type, Pilot), f"{self.pilot_type}"
+        assert issubclass(self.mech_type, Mech), f"{self.mech_type}"
+        assert isinstance(self.upgrade_types, list), f"{self.upgrade_types}"
+        for upgrade_type in self.upgrade_types:
+            assert issubclass(upgrade_type, Upgrade), f"{upgrade_type}"
 
     def create_player(self, game_state):
         return Player(

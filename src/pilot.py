@@ -27,9 +27,6 @@ class Pilot(NamedClass):
 """
 Below, all pilots are defined:
 """
-class NamelessDegenerate(Pilot):
-    card_types = []
-
 class ValorantStrider(Pilot):
     card_types = [
         cards.PushForward,
@@ -48,7 +45,6 @@ class LearnedTactician(Pilot):
 
 class VeteranOfWrath(Pilot):
     card_types = [
-        cards.RipVitals,
         cards.RipVitals,
         cards.HatefulGlare,
         cards.BoastChallenge,
@@ -69,3 +65,6 @@ class BeguiledZealot(Pilot):
         cards.LightningInspiration,
         cards.BlissfulIgnorance,
     ]
+
+class NamelessDegenerate(Pilot):
+    card_types = []

@@ -5,42 +5,11 @@ A tabeltop board game where two mechs face off for fast paced, card-in-hand game
 ![thermo mech](thermo.jpg?raw=true)
 ![thermo damedged](thermo-dmg.jpg?raw=true)
 
-## Credits
-Credits OpenAI and Dalle3 image generation AI for the images.
+## Rules
+![rules](templates/meta-rules-23-11-16.png?raw=true)
 
-# TODO
-* Rethink 'ignore terrain'. Maybe just 'flying'. Do we even care about dealing damaged for 'hitting a wall'?
-* Try strength of 5x2 magnets?
-* Rules html (and maybe some explainer images)
-* Full-size image if no steps?
-
-* Simpily part counts, lower HP:
-(can still print separately, but just glue in place - print little 'pucks' for perminient attachement - rather than magnets?)
-
-thermo removable parts now:
-per leg = 11 (22)
-per arm = 4 (8)
-torso = 7
-
-total = 37
-
-If we were to do '10' total:
-Feet are 1 part
-Torso is just face plate
-Hips are joined
-
-So:
-Face = 1
-Both Thighs = 2
-Both Shins = 2
-Both bicepts = 2
-Both forearms = 2
-(pilot?? = 1)
-
-Total = 9 (10??)
-
-Card Creation Workflow:
-(todo rest of workflow)
+# Creation Workflow
+## Card Creation
 
 Image:
 * Create image with dalle3. Some example prompts:
@@ -61,4 +30,13 @@ A simple, black line drawing of a cyberpunk mech pilot inside a mech cockpit, de
 * [Remove BG](https://new.express.adobe.com/tools/remove-background) if needed
 * [Uncrop image](https://vmake.ai/image-outpainting/upload) for 3x4 aspect ratio if needed
 * Crop, remove saturation, etc using ubuntu's shotwell editor (just open img)
+
+## Credits
+Credits OpenAI and Dalle3 image generation AI for the images.
+
+## TODO
+* Rename 'retire' to 'impound'?
+* Try strength of 5x2 magnets?
+* Full-size image if no steps?
+* Rest of workflow
 

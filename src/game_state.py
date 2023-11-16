@@ -1,7 +1,7 @@
 import logging
 logger = logging.getLogger("HotMech")
 
-from src.player import Choices
+from src.player import Player, Choices
 
 class GameState:
     """
@@ -17,7 +17,7 @@ class GameState:
         self.black = black_choices.create_player(self)
 
         # Start one player 'on other side of board'
-        self.black.location = (20, 0)
+        self.black.location = (18, 0)
         self.black.rotation = 180
 
         self.turns = 0
@@ -26,11 +26,11 @@ class GameState:
         self.turn_lengths = []
         self.first_blood_turn = None
         self.winner = None
+        self.loser = None
         self.total_melt_dmg = 0
         self.total_weapon_dmg = 0
 
         GameState._last_instance = self
-
 
     _last_instance = None
     @classmethod
@@ -42,6 +42,10 @@ class GameState:
         return GameState._last_instance
 
     def play(self):
+        # Each start with full hand
+        self.white.draw_hand()
+        self.black.draw_hand()
+
         while self.turns < 100:
             self.take_turn()
             white_dead = self.white.mech.hp <= 0
@@ -55,10 +59,16 @@ class GameState:
                 return self.end_game(self.white)
 
         if self.turns >= 100:
-            logging.warning(f"Long game: {self}")
+            logging.info(f"Long: {self}")
 
     def end_game(self, winner):
         self.winner = winner
+        if isinstance(winner, Player):
+            self.loser = self.enemy_of(winner)
+        else:
+            # For tie / none
+            self.loser = winner
+
         self.total_melt_dmg = (
             self.white.mech.total_melt_dmg
             + self.black.mech.total_melt_dmg
@@ -76,7 +86,33 @@ class GameState:
         self.turn_lengths.append(player.turn_cards)
 
     def damage_enemy(self, attacker, ammount):
-        self.enemy_of(attacker).mech.hp -= ammount
+        # Allow victim to block damage by retiring
+        # todo we sure bout this?
+        victim = self.enemy_of(attacker)
+
+        # If looking at their but, deal extra dmg
+        if victim.facing_away():
+            ammount *= 2
+
+        if (victim.get_sacrafice_card(ammount) is not None):
+            sacc = victim.get_sacrafice_card(ammount)
+            victim.retire(sacc)
+            logger.info(
+                f"Reduced {ammount} to {ammount - sacc.heat} "
+                f"by retiring {sacc}"
+            )
+            ammount -= sacc.heat
+        elif victim.healthy_enough(ammount):
+            logger.info(
+                f"Didn't reduce {ammount} (will have "
+                f"{victim.mech.hp - ammount}/{victim.mech.max_hp})")
+        else:
+            logger.info(f"Couldn't reduce {ammount}: {victim.hand}")
+
+        if ammount <= 0:
+            return
+
+        victim.mech.hp -= ammount
         logger.info(f"Dealt {ammount} to {self.enemy_of(attacker)}")
         self.total_weapon_dmg += ammount
 

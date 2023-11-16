@@ -61,7 +61,7 @@ class Mech(NamedClass):
 All mechs defined below
 """
 class Sandpiper(Mech):
-    max_hp = 5
+    max_hp = 8
     hard_points = 3
     card_types = [
         cards.StandardMove,
@@ -105,7 +105,7 @@ class Thermo(Mech):
     ]
 
 class Hauler(Mech):
-    max_hp = 15
+    max_hp = 14
     hard_points = 2
     card_types = [
         cards.StaggerForward,

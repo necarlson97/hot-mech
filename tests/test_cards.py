@@ -4,6 +4,7 @@ from src.mech import Skeleton
 from src.pilot import NamelessDegenerate
 import src.card as cards
 
+from src.utils import NamedClass
 
 def assert_player(player, health=10, location=(0, 0), reset=True):
     loc = tuple(map(lambda x: round(x), player.location))
@@ -40,8 +41,8 @@ def get_players():
     b.location = (10, 0)
 
     # Start with no cards, full hp, etc
-    assert w.deck == []
-    assert b.deck == []
+    w.deck = []
+    b.deck = []
     assert_player(w)
     assert_player(b, 10, (10, 0))
 
@@ -171,14 +172,12 @@ def test_combat():
     play_card(w, cards.LooseMissile)
     assert w.mech.hp == 10
     assert b.mech.hp == 10
-    assert_heat(w, 2)
 
     # But once we move in range, we can attack
     b.location = (10, 0)
     play_card(w, cards.LooseMissile)
     assert w.mech.hp == 10
     assert b.mech.hp == 8
-    assert_heat(w, 2)
 
     # Attack also discards
     c1 = cards.StandardMove(GameState.get_last(), b)
@@ -190,7 +189,6 @@ def test_combat():
     assert w.mech.hp == 10
     assert b.mech.hp == 8
     assert len(b.hand) == 1
-    assert_heat(w, 4)
 
     b.hand = [c1, c2, c3]
     b.location = (6, 0)
@@ -198,7 +196,6 @@ def test_combat():
     assert w.mech.hp == 10
     assert b.mech.hp == 3
     assert len(b.hand) == 2
-    assert_heat(w, 4)
 
     # Some cards are retired after use
     assert len(b.retired) == 0
@@ -206,7 +203,6 @@ def test_combat():
     assert w.mech.hp == 6
     assert b.mech.hp == 3
     assert len(b.retired) == 1
-    assert_heat(b, 4)
 
     # Don't die yet!
     w.mech.hp = 10
@@ -218,7 +214,6 @@ def test_combat():
     assert w.mech.hp == 10
     assert b.mech.hp == 7
     assert w.location == (2, 0)
-    assert_heat(w, 3)
 
     # Some force the enemy to rotate
     assert b.rotation == 180
@@ -226,13 +221,11 @@ def test_combat():
     assert w.mech.hp == 10
     assert b.mech.hp == 2
     assert b.rotation == 270
-    assert_heat(w, 4)
 
     # can't play until we turn towards them
     play_card(b, cards.LooseMissile)
     assert w.mech.hp == 10
     assert b.mech.hp == 2
-    assert_heat(b, 2)
 
     # This lets us turn
     assert b.rotation == 270
@@ -240,9 +233,10 @@ def test_combat():
     assert b.rotation == 180
     assert w.mech.hp == 8
     assert b.mech.hp == 2
-    assert_heat(b, 3)
 
     # Some heat them up
+    assert_heat(b, 1)
+    assert_heat(w, 1)
     play_card(b, cards.TorchEm)
     assert w.mech.hp == 6
     assert b.mech.hp == 2
@@ -256,7 +250,6 @@ def test_combat():
     assert w.mech.hp == 0
     assert b.mech.hp == 2
     assert b.location == (10, 0)
-    assert_heat(b, 2)
 
     # TODO
     """
@@ -282,3 +275,16 @@ def test_cost():
         assert card.cost() in allowed_heat, msg
         if card.cost() != card.heat:
             print(msg + " but within +/-1")
+
+def test_names():
+    # Ensure there is no name overlap
+    all_stuff = NamedClass.all_named_types.values()
+    for c1 in all_stuff:
+        for c2 in all_stuff:
+            conflict = c1 != c2 and c1.short_name() == c2.short_name()
+            assert not conflict, f"{c1} == {c2}"
+
+    names = [c.name for c in all_stuff]
+    short_names = [c.short_name() for c in all_stuff]
+    assert len(all_stuff) == len(set(names))
+    assert len(all_stuff) == len(set(short_names))
