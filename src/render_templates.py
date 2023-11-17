@@ -31,8 +31,8 @@ for template_file in glob.glob('templates/*.j2'):
     # Extract the template name without extension
     template_name = os.path.basename(template_file).split('.')[0]
     rendered_html = env.get_template(f'{template_name}.j2').render(
-        mechs=mechs, pilots=pilots, upgrades=upgrades, Card=Card,
-        Player=Player,
+        mechs=mechs, pilots=pilots, upgrades=upgrades,
+        Player=Player, Card=Card, Pilot=Pilot, Mech=Mech, Upgrade=Upgrade,
     )
 
     # Write the output to an HTML file

@@ -50,7 +50,7 @@ class VeteranOfWrath(Pilot):
         cards.BoastChallenge,
     ]
 
-class WileyScavenger(Pilot):
+class WilyScavenger(Pilot):
     card_types = [
         cards.TargetedStrike,
         cards.TargetedStrike,

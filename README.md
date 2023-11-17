@@ -1,3 +1,4 @@
+![mech meltdown banner](templates/box-strip.png?raw=true)
 # Mech Meltdown
 A tabeltop board game where two mechs face off for fast paced, card-in-hand gameplay. And, a set of python scrips to simulate and balance said game.
 
@@ -27,8 +28,15 @@ Human in cockpit, in pain
 ```
 A simple, black line drawing of a cyberpunk mech pilot inside a mech cockpit, depicted as in pain. The pilot should appear cybernetically enhanced and dressed in typical cyberpunk attire, showcasing a blend of human and mechanical elements. The cockpit should be minimalistic yet detailed, suggesting advanced technology and control mechanisms. It is cramped, like the cockpit of a fighter jet. The style should maintain clean lines without shading or color, emphasizing clarity and impact. Focus on the pilot's upper body and head within the cockpit, capturing a moment of wide-eyed panic. The background is plain white. Landscape aspect ratio, 3x4.
 ```
+
+Component:
+```
+A simple, black line drawing of a mech's sensor array, a detachable mechanical component. The minimalistic style with clean lines, without shading or color, creates a clear and impactful image. The background is plain white. Landscape aspect ratio, 3x4
+```
+
 * [Remove BG](https://new.express.adobe.com/tools/remove-background) if needed
-* [Uncrop image](https://vmake.ai/image-outpainting/upload) for 3x4 aspect ratio if needed
+* [Uncrop image](https://clipdrop.co/uncrop) for 3x4 aspect ratio if needed
+* If [heavier photo editing is needed](https://www.photopea.com/)
 * Crop, remove saturation, etc using ubuntu's shotwell editor (just open img)
 
 ## Credits

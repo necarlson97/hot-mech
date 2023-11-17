@@ -80,8 +80,8 @@ h2 {
     padding-left: .5em;
 }
 
-.card-heat {
-    background-color: red;
+.card-heat, .card-number {
+    background-color: white;
 
     width: 1.5em;
     height: 1.5em;

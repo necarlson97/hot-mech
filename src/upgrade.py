@@ -45,7 +45,7 @@ class SensorArray(Upgrade):
         cards.LockOn,
     ]
 
-class Misslepod(Upgrade):
+class MissilePod(Upgrade):
     card_types = [
         cards.LooseMissile,
         cards.LooseMissile,

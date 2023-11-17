@@ -42,5 +42,17 @@
             </div>
         </div>
     {% endfor %}
+
+    {% from "_meta-card.j2" import build_meta_card %}
+    {% for parent_type in [Pilot, Upgrade, Mech]  %}
+        <div class="mech-section">
+        <h2>{{ parent_type.human_name() }}</h2>
+        <div class="cards-container">
+            {% for type in parent_type.all_types.values() %}
+                {{  build_meta_card(type) }}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
 </body>
 </html>

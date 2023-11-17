@@ -1,0 +1,16 @@
+## Card that shows what cards go with a pilot/upgrade/mech
+{% macro build_meta_card(type) %}
+    <div class="card">
+        <div class="card-header">
+            <span class="card-name">{{ type.human_name() }}</span>
+            <span class="card-number">{{ type.card_types |count }}</span>
+        </div>
+        <img src="images/{{ type.name }}.png" class="card-image">
+        <div class="card-body">
+            {% for card_type in type.card_types %}
+                <p>{{ '‣' + card_type.human_name() }}</p>
+            {% endfor %}
+        </div>
+        <div class="card-footer">{{ type.flavor_text }}</div>
+    </div>
+{% endmacro %}
