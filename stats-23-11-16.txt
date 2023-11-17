@@ -1,0 +1,107 @@
+# Better
+Card - cook-cabin: +10%
+Card - missile-hail: +9%
+Card - shake-it-off: +5%
+Card - blinding-burst: +10%
+Card - laser-snapfire: +8%
+Card - push-off: +15%
+Card - drive-by: +11%
+Card - tracking-shot: +5%
+Card - supressing-fire: +5%
+Card - sweeping-barrage: +12%
+Card - rip-vitals: +13%
+Card - hateful-glare: +6%
+Card - blast-off: -5%
+
+# Worse
+Card - giddy-retreat: -7%
+Card - cover-eyes: -6%
+Card - mechanical-fuse: -11%
+Card - drive-harder: -2%
+Card - lightning-inspiration: -7%
+Card - blissful-ignorance: -2%
+
+
+Card - slow-sizzle: +1%
+Card - jettison-heatsinks: -1%
+Card - steam-blowoff: +3%
+Card - take-reading: +3%
+Card - lock-on: 0%
+Card - jolt-forward: 0%
+
+
+# Better
+Step - move-away: +12%
+Step - force-rotate: +10%
+Step - attack: +8%
+Step - retire: +6%
+Step - enemy-discard: +9%
+Step - heat-enemy: +4%
+Step - range-check: +6%
+
+# Worse
+Step - draw: -3%
+Step - discard: -4%
+Step - hurt-self: -11%
+Step - rotate-away: -7%
+
+# Balanced
+Step - move-forward: -1%
+Step - rotate: 0%
+Step - unretire: +3%
+Step - end-turn: 0%
+Step - increase-range: 0%
+
+# Balanced
+Card - standard-move: +1%
+Card - standing-swivel: +3%
+Card - step-up: +1%
+Card - combat-wit: +2%
+Card - step-back: -1%
+Card - cool-off: +2%
+Card - melt-sensors: -1%
+Card - torch-em: +4%
+Card - loose-missile: +2%
+Card - jump-pack: -3%
+Card - slow-it-down: -3%
+Card - stagger-forward: -2%
+Card - overdrive-servos: 0%
+Card - remember-training: +1%
+Card - do-it-right: +1%
+Card - heavy-lead: +3%
+Card - push-forward: +3%
+Card - keep-tempo: -3%
+Card - chart-study: -4%
+Card - recall-wisdom: -3%
+Card - survey-landscape: -1%
+Card - boast-challenge: +1%
+Card - targeted-strike: +4%
+
+Mech - sandpiper Wins: 33%
+Mech - thermo Wins: 30%
+Mech - hauler Wins: 35%
+Mech - skeleton Wins: 0%
+Mech - Tie Wins: 2%
+Mech - None Wins: 0%
+
+Pilot - VeteranO Wins: 23%
+Pilot - LearnedT Wins: 16%
+Pilot - NamelessD Wins: 17%
+Pilot - WileyS Wins: 15%
+Pilot - ValorantS Wins: 14%
+Pilot - BeguiledZ Wins: 13%
+
+Upgrade - misslepod Wins: 39%
+Upgrade - tassles Wins: 35%
+Upgrade - SolidB Wins: 34%
+Upgrade - SensorA Wins: 33%
+Upgrade - RhodiumR Wins: 32%
+Upgrade - EjectableH Wins: 31%
+
+Game Length: Median: 15.0t (7.0)r [1-100]
+1st blood: Median: 2.0t (1.0)r [1-42]
+Combat Length: Median: 12.0t (6.0)r [0-99]
+No weapons: 0%
+Cards per turn: Median: 2 [0-8]
+Melt Damage: Median: 1.0 [0-17]
+Weapon Damage: Median: 14.0 [1-39]
